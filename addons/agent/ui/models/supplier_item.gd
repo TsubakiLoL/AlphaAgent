@@ -39,6 +39,10 @@ const ProviderConfig = [
 		"provider": "deepseek"
 	},
 	{
+		"name": "MiniMax",
+		"provider": "minimax"
+	},
+	{
 		"name": "Ollama",
 		"provider": "ollama"
 	}
@@ -160,7 +164,10 @@ func _update_default_api_base(provider_index: int):
 		1: # DeepSeek
 			supplier_base_url.text = "https://api.deepseek.com"
 			supplier_secret_key.placeholder_text = "sk-..."
-		2: # Ollama
+		2: # MiniMax
+			supplier_base_url.text = "https://api.minimaxi.com/v1"
+			supplier_secret_key.placeholder_text = "输入 MiniMax API Key"
+		3: # Ollama
 			supplier_base_url.text = "http://localhost:11434"
 			supplier_secret_key.text = ""
 			supplier_secret_key.placeholder_text = "Ollama 不需要 API Key"

@@ -224,6 +224,11 @@ func send_messages():
 		if supplier.provider == "ollama":
 			current_chat_stream = OllamaChatStream.new()
 			current_title_chat = OllamaChat.new()
+		elif supplier.provider == "minimax":
+			current_chat_stream = MiniMaxChatStream.new()
+			current_title_chat = MiniMaxChat.new()
+			current_chat_stream.secret_key = supplier.api_key
+			current_title_chat.secret_key = supplier.api_key
 		elif supplier.provider == "openai" or supplier.provider == "deepseek":
 			current_chat_stream = OpenAIChatStream.new()
 			current_title_chat = OpenAIChat.new()

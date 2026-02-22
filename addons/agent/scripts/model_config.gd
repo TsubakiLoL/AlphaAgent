@@ -220,6 +220,54 @@ class ModelManager:
 		qwen_next_80b_a3b_thinking.supplier_id = siliconflow_supplier.id
 		siliconflow_supplier.models.append(qwen_next_80b_a3b_thinking)
 
+		# 添加默认MiniMax供应商
+		var minimax_supplier = SupplierInfo.new()
+		minimax_supplier.name = "MiniMax"
+		minimax_supplier.base_url = "https://api.minimaxi.com/v1"
+		minimax_supplier.api_key = ""
+		minimax_supplier.provider = "minimax"
+		suppliers.append(minimax_supplier)
+
+		var minimax_m25_model = ModelInfo.new()
+		minimax_m25_model.name = "MiniMax-M2.5"
+		minimax_m25_model.model_name = "MiniMax-M2.5"
+		minimax_m25_model.supports_thinking = true
+		minimax_m25_model.supports_tools = true
+		minimax_m25_model.max_tokens = 64 * 1024
+		minimax_m25_model.active = false
+		minimax_m25_model.supplier_id = minimax_supplier.id
+		minimax_supplier.models.append(minimax_m25_model)
+
+		var minimax_m25_hs_model = ModelInfo.new()
+		minimax_m25_hs_model.name = "MiniMax-M2.5-highspeed"
+		minimax_m25_hs_model.model_name = "MiniMax-M2.5-highspeed"
+		minimax_m25_hs_model.supports_thinking = true
+		minimax_m25_hs_model.supports_tools = true
+		minimax_m25_hs_model.max_tokens = 64 * 1024
+		minimax_m25_hs_model.active = false
+		minimax_m25_hs_model.supplier_id = minimax_supplier.id
+		minimax_supplier.models.append(minimax_m25_hs_model)
+
+		var minimax_m21_model = ModelInfo.new()
+		minimax_m21_model.name = "MiniMax-M2.1"
+		minimax_m21_model.model_name = "MiniMax-M2.1"
+		minimax_m21_model.supports_thinking = true
+		minimax_m21_model.supports_tools = true
+		minimax_m21_model.max_tokens = 64 * 1024
+		minimax_m21_model.active = false
+		minimax_m21_model.supplier_id = minimax_supplier.id
+		minimax_supplier.models.append(minimax_m21_model)
+
+		var minimax_m2_model = ModelInfo.new()
+		minimax_m2_model.name = "MiniMax-M2"
+		minimax_m2_model.model_name = "MiniMax-M2"
+		minimax_m2_model.supports_thinking = false
+		minimax_m2_model.supports_tools = true
+		minimax_m2_model.max_tokens = 64 * 1024
+		minimax_m2_model.active = false
+		minimax_m2_model.supplier_id = minimax_supplier.id
+		minimax_supplier.models.append(minimax_m2_model)
+
 		# 添加默认OpenRouter供应商
 		var openrouter_supplier = SupplierInfo.new()
 		openrouter_supplier.name = "Open Router"

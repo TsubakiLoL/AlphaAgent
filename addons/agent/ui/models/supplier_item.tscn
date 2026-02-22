@@ -214,13 +214,15 @@ layout_mode = 2
 tooltip_text = "支持的API类型。"
 theme_override_styles/normal = SubResource("StyleBoxFlat_cxw2j")
 selected = 0
-item_count = 3
+item_count = 4
 popup/item_0/text = "Open AI"
 popup/item_0/id = 0
 popup/item_1/text = "DeepSeek"
 popup/item_1/id = 1
-popup/item_2/text = "Ollama"
+popup/item_2/text = "MiniMax"
 popup/item_2/id = 2
+popup/item_3/text = "Ollama"
+popup/item_3/id = 3
 
 [node name="SupplierAPITypeTips" type="RichTextLabel" parent="VBoxContainer/SupplierEdit"]
 unique_name_in_owner = true
