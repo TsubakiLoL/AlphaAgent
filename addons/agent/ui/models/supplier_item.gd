@@ -19,12 +19,22 @@ extends PanelContainer
 @onready var supplier_base_url: LineEdit = %SupplierBaseURL
 @onready var supplier_secret_key: LineEdit = %SupplierSecretKey
 @onready var supplier_api_type_tips: RichTextLabel = %SupplierAPITypeTips
+@onready var supplier_home_page: LinkButton = %SupplierHomePage
 
 const SETTING_MODEL_ITEM = preload("uid://t8tpl55g2wg0")
 
 var model_manager_window: Window = null
 
 const MODEL_MANAGER = preload("uid://dr7g6mrkb8u3e")
+
+const OPENAI_PROVIDER_TIPS := """[b]说明[/b]：
+open ai类型表示按照open ai公司开发的标准。适用于目前市面上的大部分模型。
+[b]可使用的平台[/b]：DeepSeek、MoonShot、硅基流动等。
+[b]不可以使用的[/b]：Claude AI、Gemini、以及由于GPT4.0以后的版本都重构了结构，所以不支持新版本的GPT。"""
+
+const GEMINI_PROVIDER_TIPS := """[b]说明[/b]：
+Gemini 类型请求可能需要通过代理访问。
+[b]提示[/b]：请先在设置面板中配置并开启 HTTP 代理（主机和端口），再进行模型验证和对话请求。"""
 
 signal save
 signal remove
@@ -66,7 +76,8 @@ func _ready() -> void:
 	supplier_api_type.item_selected.connect(_on_provider_changed)
 	remove_supplier_button.pressed.connect(_on_remove_supplier)
 	add_model_button.pressed.connect(on_add_model_button_click)
-	supplier_api_type_tips.visible = supplier_api_type.get_item_index(supplier_api_type.get_selected_id()) == 0
+	_update_supplier_api_type_tips()
+	_update_supplier_home_page()
 	check_model_button.pressed.connect(on_check_model_button_click)
 
 func on_toggle_expend_model_button(toggle_on: bool):
@@ -86,6 +97,7 @@ func on_click_save_button():
 	supplier_info.base_url = supplier_base_url.text
 	supplier_info.api_key = supplier_secret_key.text
 	supplier_info.provider = ProviderConfig[supplier_api_type.get_selected_id()]["provider"]
+	_update_supplier_home_page()
 	if AlphaAgentPlugin.global_setting.model_manager.get_supplier_by_id(supplier_info.id) == null:
 		AlphaAgentPlugin.global_setting.model_manager.add_supplier(supplier_info)
 		alert("新建成功", "新建成功，请回到对话页面使用")
@@ -117,6 +129,7 @@ func set_supplier_info(supplier: ModelConfig.SupplierInfo):
 
 	refresh_setting_model_list()
 	init_edit_fields()
+	_update_supplier_home_page()
 
 func handle_edit_model(model: ModelConfig.ModelInfo):
 	on_click_edit_model_button(model)
@@ -136,7 +149,8 @@ func init_edit_fields():
 			idx = i
 			break
 	supplier_api_type.select(idx)
-	supplier_api_type_tips.visible = supplier_api_type.get_item_index(supplier_api_type.get_selected_id()) == 0
+	_update_supplier_api_type_tips()
+	_update_supplier_home_page()
 
 
 # 打开模型管理窗口
@@ -158,7 +172,55 @@ func on_click_edit_model_button(model_info: ModelConfig.ModelInfo = null):
 
 func _on_provider_changed(index: int):
 	_update_default_api_base(index)
-	supplier_api_type_tips.visible = supplier_api_type.get_item_index(supplier_api_type.get_selected_id()) == 0
+	_update_supplier_api_type_tips()
+	_update_supplier_home_page()
+
+func _update_supplier_api_type_tips():
+	var provider = ProviderConfig[supplier_api_type.get_selected_id()]["provider"]
+	match provider:
+		"openai":
+			supplier_api_type_tips.visible = true
+			supplier_api_type_tips.text = OPENAI_PROVIDER_TIPS
+		"gemini":
+			supplier_api_type_tips.visible = true
+			supplier_api_type_tips.text = GEMINI_PROVIDER_TIPS
+		_:
+			supplier_api_type_tips.visible = false
+
+func _update_supplier_home_page():
+	if supplier_home_page == null:
+		return
+
+	var selected_provider = ProviderConfig[supplier_api_type.get_selected_id()]["provider"]
+	var current_name = supplier_name.text.strip_edges()
+	var current_base_url = supplier_base_url.text.strip_edges()
+	var url = _get_provider_home_page_url(selected_provider, current_name, current_base_url)
+	if url.is_empty():
+		supplier_home_page.visible = false
+		supplier_home_page.uri = ""
+		return
+
+	supplier_home_page.visible = true
+	supplier_home_page.text = "跳转至官网"
+	supplier_home_page.uri = url
+
+func _get_provider_home_page_url(provider: String, current_name: String, current_base_url: String) -> String:
+	var lower_name = current_name.to_lower()
+	var lower_base_url = current_base_url.to_lower()
+	if lower_name.find("open router") != -1 or lower_name.find("openrouter") != -1 or lower_base_url.find("openrouter.ai") != -1:
+		return "https://openrouter.ai/"
+
+	match provider:
+		"gemini":
+			return "https://aistudio.google.com/"
+		"minimax":
+			return "https://www.minimaxi.com/"
+		"deepseek":
+			return "https://www.deepseek.com/"
+		"ollama":
+			return "https://ollama.com/"
+		_:
+			return ""
 
 func _update_default_api_base(provider_index: int):
 	match provider_index:
