@@ -29,12 +29,20 @@ const MODEL_MANAGER = preload("uid://dr7g6mrkb8u3e")
 
 const OPENAI_PROVIDER_TIPS := """[b]说明[/b]：
 open ai类型表示按照open ai公司开发的标准。适用于目前市面上的大部分模型。
-[b]可使用的平台[/b]：DeepSeek、MoonShot、硅基流动等。
+[b]可使用的平台[/b]：OpenAI、DeepSeek、硅基流动、OpenRouter等。
 [b]不可以使用的[/b]：Claude AI、Gemini、以及由于GPT4.0以后的版本都重构了结构，所以不支持新版本的GPT。"""
 
 const GEMINI_PROVIDER_TIPS := """[b]说明[/b]：
 Gemini 类型请求可能需要通过代理访问。
 [b]提示[/b]：请先在设置面板中配置并开启 HTTP 代理（主机和端口），再进行模型验证和对话请求。"""
+
+const MOONSHOT_PROVIDER_TIPS := """[b]说明[/b]：
+MoonShot 仅支持使用正常充值账户调用接口。
+[b]提示[/b]：会员账户暂不支持，请使用已充值的 API 账户。"""
+
+const MINIMAX_PROVIDER_TIPS := """[b]说明[/b]：
+MiniMax 支持充值账户和使用 Coding Plan 的账户。
+[b]提示[/b]：当前无法获取模型列表，可直接在对话中使用。"""
 
 signal save
 signal remove
@@ -43,6 +51,10 @@ const ProviderConfig = [
 	{
 		"name": "OpenAI",
 		"provider": "openai"
+	},
+	{
+		"name": "MoonShot",
+		"provider": "moonshot"
 	},
 	{
 		"name": "DeepSeek",
@@ -181,6 +193,12 @@ func _update_supplier_api_type_tips():
 		"openai":
 			supplier_api_type_tips.visible = true
 			supplier_api_type_tips.text = OPENAI_PROVIDER_TIPS
+		"moonshot":
+			supplier_api_type_tips.visible = true
+			supplier_api_type_tips.text = MOONSHOT_PROVIDER_TIPS
+		"minimax":
+			supplier_api_type_tips.visible = true
+			supplier_api_type_tips.text = MINIMAX_PROVIDER_TIPS
 		"gemini":
 			supplier_api_type_tips.visible = true
 			supplier_api_type_tips.text = GEMINI_PROVIDER_TIPS
@@ -211,6 +229,8 @@ func _get_provider_home_page_url(provider: String, current_name: String, current
 		return "https://openrouter.ai/"
 
 	match provider:
+		"moonshot":
+			return "https://platform.moonshot.cn/"
 		"gemini":
 			return "https://aistudio.google.com/"
 		"minimax":
@@ -227,16 +247,19 @@ func _update_default_api_base(provider_index: int):
 		0: # OpenAI
 			supplier_base_url.text = "https://api.openai.com"
 			supplier_secret_key.placeholder_text = "sk-..."
-		1: # DeepSeek
+		1: # MoonShot
+			supplier_base_url.text = "https://api.moonshot.cn"
+			supplier_secret_key.placeholder_text = "sk-..."
+		2: # DeepSeek
 			supplier_base_url.text = "https://api.deepseek.com"
 			supplier_secret_key.placeholder_text = "sk-..."
-		2: # MiniMax
+		3: # MiniMax
 			supplier_base_url.text = "https://api.minimaxi.com/v1"
 			supplier_secret_key.placeholder_text = "输入 MiniMax API Key"
-		3: # Gemini
+		4: # Gemini
 			supplier_base_url.text = "https://generativelanguage.googleapis.com/v1beta"
 			supplier_secret_key.placeholder_text = "输入 Gemini API Key"
-		4: # Ollama
+		5: # Ollama
 			supplier_base_url.text = "http://localhost:11434"
 			supplier_secret_key.text = ""
 			supplier_secret_key.placeholder_text = "Ollama 不需要 API Key"

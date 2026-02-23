@@ -234,6 +234,11 @@ func send_messages():
 			current_title_chat = GeminiChat.new()
 			current_chat_stream.secret_key = supplier.api_key
 			current_title_chat.secret_key = supplier.api_key
+		elif supplier.provider == "moonshot":
+			current_chat_stream = MoonShotChatStream.new()
+			current_title_chat = MoonShotChat.new()
+			current_chat_stream.secret_key = supplier.api_key
+			current_title_chat.secret_key = supplier.api_key
 		elif supplier.provider == "openai" or supplier.provider == "deepseek":
 			current_chat_stream = OpenAIChatStream.new()
 			current_title_chat = OpenAIChat.new()

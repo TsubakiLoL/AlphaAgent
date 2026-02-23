@@ -9,7 +9,7 @@ class SupplierInfo:
 	var name: String = ""
 	var base_url: String = ""
 	var api_key: String = ""
-	var provider: String = "openai"  # 提供商类型: openai, deepseek, ollama
+	var provider: String = "openai"  # 提供商类型: openai, moonshot, deepseek, minimax, gemini, ollama
 	var models: Array = []
 
 	func _init(s_id: String = "", s_name: String = "", s_api_base: String = "",
@@ -149,8 +149,28 @@ class ModelManager:
 		moonshot_supplier.name = "MoonShot"
 		moonshot_supplier.base_url = "https://api.moonshot.cn"
 		moonshot_supplier.api_key = ""
-		moonshot_supplier.provider = "openai"
+		moonshot_supplier.provider = "moonshot"
 		suppliers.append(moonshot_supplier)
+
+		var kimi_k2_5_model = ModelInfo.new()
+		kimi_k2_5_model.name = "Kimi K2.5"
+		kimi_k2_5_model.model_name = "kimi-k2.5"
+		kimi_k2_5_model.supports_thinking = true
+		kimi_k2_5_model.supports_tools = true
+		kimi_k2_5_model.max_tokens = 8 * 1024
+		kimi_k2_5_model.active = false
+		kimi_k2_5_model.supplier_id = moonshot_supplier.id
+		moonshot_supplier.models.append(kimi_k2_5_model)
+
+		var kimi_k2_5_preview_model = ModelInfo.new()
+		kimi_k2_5_preview_model.name = "Kimi K2.5 Preview"
+		kimi_k2_5_preview_model.model_name = "kimi-k2.5-preview"
+		kimi_k2_5_preview_model.supports_thinking = false
+		kimi_k2_5_preview_model.supports_tools = true
+		kimi_k2_5_preview_model.max_tokens = 8 * 1024
+		kimi_k2_5_preview_model.active = false
+		kimi_k2_5_preview_model.supplier_id = moonshot_supplier.id
+		moonshot_supplier.models.append(kimi_k2_5_preview_model)
 
 		var kimi_k2_turbo_preview_model = ModelInfo.new()
 		kimi_k2_turbo_preview_model.name = "Kimi K2 Turbo Preview"

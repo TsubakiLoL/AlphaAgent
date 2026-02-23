@@ -214,17 +214,19 @@ layout_mode = 2
 tooltip_text = "支持的API类型。"
 theme_override_styles/normal = SubResource("StyleBoxFlat_cxw2j")
 selected = 0
-item_count = 5
+item_count = 6
 popup/item_0/text = "Open AI"
 popup/item_0/id = 0
-popup/item_1/text = "DeepSeek"
+popup/item_1/text = "MoonShot"
 popup/item_1/id = 1
-popup/item_2/text = "MiniMax"
+popup/item_2/text = "DeepSeek"
 popup/item_2/id = 2
-popup/item_3/text = "Gemini"
+popup/item_3/text = "MiniMax"
 popup/item_3/id = 3
-popup/item_4/text = "Ollama"
+popup/item_4/text = "Gemini"
 popup/item_4/id = 4
+popup/item_5/text = "Ollama"
+popup/item_5/id = 5
 
 [node name="SupplierAPITypeTips" type="RichTextLabel" parent="VBoxContainer/SupplierEdit"]
 unique_name_in_owner = true
@@ -236,7 +238,7 @@ theme_override_styles/normal = SubResource("StyleBoxEmpty_3c5pc")
 bbcode_enabled = true
 text = "[b]说明[/b]：
 open ai类型表示按照open ai公司开发的标准。适用于目前市面上的大部分模型。
-[b]可使用的平台[/b]：DeepSeek、MoonShot、硅基流动等。
+[b]可使用的平台[/b]：OpenAI、DeepSeek、硅基流动、OpenRouter等。
 [b]不可以使用的[/b]：Claude AI、Gemini、以及由于GPT4.0以后的版本都重构了结构，所以不支持新版本的GPT。"
 fit_content = true
 
