@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.4.0] - 2026-02-12
+## [0.4.0] - 2026-02-23
 
 ### ✨ New Features (新增功能)
 - **文件变更追踪**:
@@ -21,6 +21,14 @@ All notable changes to this project will be documented in this file.
   - 添加全局搜索工具，全文搜索项目内容。
   - 添加资源内容读取工具，读取资源文件内容结构。
   - 添加读取脚本大纲工具，读取脚本文件大纲。
+- **模型管理**:
+  - 新增 MiniMax 供应商以及相应模型。
+  - 新增 Gemini 供应商以及相关模型，并补充 Gemini 默认模型。
+  - 新增 MoonShot 供应商及其模型。
+- **网络与连接**:
+  - 新增全局 HTTP 代理设置，用于模型请求场景配置。
+- **交互优化**:
+  - 新增供应商官网跳转链接，支持从供应商配置直接访问官网。
 
 ### 🐛 Bug Fixes (问题修复)
 - 修复记忆面板中切换 Godot 侧边栏时记忆数量变化错误的问题。
