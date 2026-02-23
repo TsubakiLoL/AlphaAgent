@@ -286,6 +286,26 @@ class ModelManager:
 		gemini_flash_preview.supplier_id = gemini_supplier.id
 		gemini_supplier.models.append(gemini_flash_preview)
 
+		var gemini_31_pro_preview = ModelInfo.new()
+		gemini_31_pro_preview.name = "gemini-3.1-pro-preview"
+		gemini_31_pro_preview.model_name = "gemini-3.1-pro-preview"
+		gemini_31_pro_preview.supports_thinking = false
+		gemini_31_pro_preview.supports_tools = false
+		gemini_31_pro_preview.max_tokens = 64 * 1024
+		gemini_31_pro_preview.active = false
+		gemini_31_pro_preview.supplier_id = gemini_supplier.id
+		gemini_supplier.models.append(gemini_31_pro_preview)
+
+		var gemini_25_flash = ModelInfo.new()
+		gemini_25_flash.name = "gemini-2.5-flash"
+		gemini_25_flash.model_name = "gemini-2.5-flash"
+		gemini_25_flash.supports_thinking = false
+		gemini_25_flash.supports_tools = false
+		gemini_25_flash.max_tokens = 64 * 1024
+		gemini_25_flash.active = false
+		gemini_25_flash.supplier_id = gemini_supplier.id
+		gemini_supplier.models.append(gemini_25_flash)
+
 		# 添加默认OpenRouter供应商
 		var openrouter_supplier = SupplierInfo.new()
 		openrouter_supplier.name = "Open Router"
