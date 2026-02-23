@@ -38,6 +38,8 @@ func _ready() -> void:
 
 ## 发送请求
 func post_message(messages: Array[Dictionary]):
+	AgentModelUtils.apply_proxy_to_http_request(http_request)
+
 	var headers = [
 		"Accept: application/json",
 		"Authorization: Bearer %s" % secret_key,

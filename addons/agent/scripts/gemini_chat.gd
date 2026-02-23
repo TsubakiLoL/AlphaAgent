@@ -38,6 +38,8 @@ func _ready() -> void:
 ## 发送请求
 func post_message(messages: Array[Dictionary]):
 	tool_calls = []
+	AgentModelUtils.apply_proxy_to_http_request(http_request)
+
 	var headers = [
 		"Accept: application/json",
 		"x-goog-api-key: %s" % secret_key,

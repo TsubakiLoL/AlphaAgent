@@ -5,6 +5,9 @@ extends ScrollContainer
 @onready var auto_expand_think_setting: BoxContainer = $SettingPanel/SettingItemsContainer/AutoExpandThinkSetting
 @onready var auto_add_file_ref_setting: BoxContainer = $SettingPanel/SettingItemsContainer/AutoAddFileRefSetting
 @onready var send_shot_cut: BoxContainer = $SettingPanel/SettingItemsContainer/SendShotCut
+@onready var http_proxy_host: BoxContainer = $SettingPanel/SettingItemsContainer/HBoxContainer/HttpProxyHost
+@onready var http_proxy_port: BoxContainer = $SettingPanel/SettingItemsContainer/HBoxContainer/HttpProxyPort
+
 #@onready var config_model_button: Button = $SettingPanel/SettingItemsContainer/ConfigModelButton
 @onready var add_supplier_button: Button = %AddSupplierButton
 @onready var supplier_list: VBoxContainer = %SupplierList
@@ -22,7 +25,9 @@ const EDIT_ROLE_WINDOW = preload("uid://cx0yeuxsc2kui")
 	auto_clear_setting,
 	auto_expand_think_setting,
 	auto_add_file_ref_setting,
-	send_shot_cut
+	send_shot_cut,
+	http_proxy_host,
+	http_proxy_port
 ]
 
 signal config_model

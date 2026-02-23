@@ -17,7 +17,7 @@ extends Node
 ## 最大输出长度
 @export var max_tokens: int = 4096
 ## 是否输出调试日志
-@export var print_log: bool = true
+@export var print_log: bool = false
 ## 可供模型调用的工具（OpenAI function schema，将转换为 Gemini functionDeclarations）
 @export var tools: Array = []
 
@@ -43,6 +43,7 @@ var tool_calls: Array[AgentModelUtils.ToolCallsInfo] = []
 ## 发送请求
 func post_message(messages: Array[Dictionary]):
 	tool_calls = []
+	AgentModelUtils.apply_proxy_to_http_client(http_client)
 	if print_log: print("Gemini 请求消息列表: ", messages)
 
 	var headers = [
@@ -73,10 +74,6 @@ func post_message(messages: Array[Dictionary]):
 			"data": api_base
 		})
 		return
-
-	# 临时写死本地代理，便于排查 HTTPS 连接问题
-	http_client.set_http_proxy("127.0.0.1", 7897)
-	http_client.set_https_proxy("127.0.0.1", 7897)
 
 	var connect_err = http_client.connect_to_host(host, 443 if use_tls else 80,
 												  TLSOptions.client() if use_tls else null)

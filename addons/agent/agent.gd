@@ -84,6 +84,8 @@ class GlobalSetting:
 	var auto_expand_think: bool = false
 	var auto_add_file_ref: bool = true
 	var send_shortcut: SendShotcut = SendShotcut.None
+	var http_proxy_host: String = ""
+	var http_proxy_port: String = ""
 	var model_manager: ModelConfig.ModelManager = null
 	var role_manager: AgentRoleConfig.RoleManager = null
 	var skill_manager: AgentSkillConfig.SkillManager = null
@@ -120,6 +122,8 @@ class GlobalSetting:
 		self.auto_expand_think = json.get("auto_expand_think", false)
 		self.auto_add_file_ref = json.get("auto_add_file_ref", true)
 		self.send_shortcut = json.get("send_shortcut", SendShotcut.Enter)
+		self.http_proxy_host = str(json.get("http_proxy_host", ""))
+		self.http_proxy_port = str(json.get("http_proxy_port", ""))
 
 		# 初始化模型管理器
 		model_manager = ModelConfig.ModelManager.new(models_file)
@@ -136,6 +140,8 @@ class GlobalSetting:
 			"auto_expand_think": self.auto_expand_think,
 			"auto_add_file_ref": self.auto_add_file_ref,
 			"send_shortcut": self.send_shortcut,
+			"http_proxy_host": self.http_proxy_host,
+			"http_proxy_port": self.http_proxy_port,
 		}
 		var file = FileAccess.open(setting_file, FileAccess.WRITE)
 		file.store_string(JSON.stringify(dict))

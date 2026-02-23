@@ -197,6 +197,7 @@ func on_check_model_button_click():
 	check_model_button.disabled = true
 
 	check_supplier_request.request_completed.connect(self._http_request_completed, CONNECT_ONE_SHOT)
+	AgentModelUtils.apply_proxy_to_http_request(check_supplier_request)
 
 	var provider = ProviderConfig[supplier_api_type.get_selected_id()]["provider"]
 	var headers = [
