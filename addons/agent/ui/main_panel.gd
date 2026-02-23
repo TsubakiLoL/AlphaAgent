@@ -229,6 +229,11 @@ func send_messages():
 			current_title_chat = MiniMaxChat.new()
 			current_chat_stream.secret_key = supplier.api_key
 			current_title_chat.secret_key = supplier.api_key
+		elif supplier.provider == "gemini":
+			current_chat_stream = GeminiChatStream.new()
+			current_title_chat = GeminiChat.new()
+			current_chat_stream.secret_key = supplier.api_key
+			current_title_chat.secret_key = supplier.api_key
 		elif supplier.provider == "openai" or supplier.provider == "deepseek":
 			current_chat_stream = OpenAIChatStream.new()
 			current_title_chat = OpenAIChat.new()
@@ -354,16 +359,17 @@ func on_use_tool(tool_calls: Array):
 
 	scroll_message_container_to_bottom()
 
-	current_history_item.title = current_title
-
-	history_and_title.update_history(current_id, current_history_item)
+	if current_history_item:
+		current_history_item.title = current_title
+		history_and_title.update_history(current_id, current_history_item)
 
 func on_generate_error(error_info: Dictionary):
 	#printerr("发生错误")
 	printerr(error_info.error_msg)
 	printerr(error_info.data)
 	#current_message_item.update_think_content(current_think, false)
-	current_message_item.update_error_message(error_info.error_msg, error_info.data)
+	if current_message_item:
+		current_message_item.update_error_message(error_info.error_msg, error_info.data)
 	AlphaAgentPlugin.is_chat_stopped = true
 
 	input_container.disable = false
@@ -434,7 +440,8 @@ func on_agent_finish(finish_reason: String, total_tokens: float):
 	input_container.set_usage_label(total_tokens, 128)
 	#print(messages)
 
-	if first_chat:
+	# 仅在本轮对话最终结束时生成标题，避免工具调用中间步骤重复触发并发请求
+	if first_chat and finish_reason != "tool_calls":
 		#print(JSON.stringify(messages))
 		current_history_item = AgentHistoryAndTitle.HistoryItem.new()
 		current_id = AlphaUtils.generate_random_string(16)
@@ -514,6 +521,7 @@ func on_recovery_history(history_item: AgentHistoryAndTitle.HistoryItem):
 					tool_call_info = AgentModelUtils.ToolCallsInfo.new()
 					tool_call_info.id = tool_call.get("id")
 					tool_call_info.type = tool_call.get("type")
+					tool_call_info.thought_signature = tool_call.get("thought_signature", tool_call.get("thoughtSignature", ""))
 					tool_call_info.function = AgentModelUtils.ToolCallsInfoFunc.new()
 					tool_call_info.function.arguments = tool_call.get("function").get("arguments")
 					tool_call_info.function.name = tool_call.get("function").get("name")

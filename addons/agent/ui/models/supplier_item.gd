@@ -43,6 +43,10 @@ const ProviderConfig = [
 		"provider": "minimax"
 	},
 	{
+		"name": "Gemini",
+		"provider": "gemini"
+	},
+	{
 		"name": "Ollama",
 		"provider": "ollama"
 	}
@@ -167,7 +171,10 @@ func _update_default_api_base(provider_index: int):
 		2: # MiniMax
 			supplier_base_url.text = "https://api.minimaxi.com/v1"
 			supplier_secret_key.placeholder_text = "输入 MiniMax API Key"
-		3: # Ollama
+		3: # Gemini
+			supplier_base_url.text = "https://generativelanguage.googleapis.com/v1beta"
+			supplier_secret_key.placeholder_text = "输入 Gemini API Key"
+		4: # Ollama
 			supplier_base_url.text = "http://localhost:11434"
 			supplier_secret_key.text = ""
 			supplier_secret_key.placeholder_text = "Ollama 不需要 API Key"
@@ -191,14 +198,34 @@ func on_check_model_button_click():
 
 	check_supplier_request.request_completed.connect(self._http_request_completed, CONNECT_ONE_SHOT)
 
+	var provider = ProviderConfig[supplier_api_type.get_selected_id()]["provider"]
 	var headers = [
 		"Accept: application/json",
-		"Authorization: Bearer %s" % supplier_secret_key.text,
 		"Content-Type: application/json"
 	]
+	var check_url = ""
+	var base = supplier_base_url.text
+	if base.ends_with("/"):
+		base = base.substr(0, base.length() - 1)
 
-	# 执行一个 GET 请求。以下 URL 会将写入作为 JSON 返回。
-	var error = check_supplier_request.request(supplier_base_url.text + "/v1/models", headers)
+	match provider:
+		"gemini":
+			headers.append("x-goog-api-key: %s" % supplier_secret_key.text)
+			if base.ends_with("/v1beta"):
+				check_url = base + "/models"
+			else:
+				check_url = base + "/v1beta/models"
+		"ollama":
+			check_url = base + "/api/tags"
+		_:
+			headers.append("Authorization: Bearer %s" % supplier_secret_key.text)
+			if base.ends_with("/v1"):
+				check_url = base + "/models"
+			else:
+				check_url = base + "/v1/models"
+
+	# 执行一个 GET 请求。
+	var error = check_supplier_request.request(check_url, headers)
 	if error != OK:
 		alert("验证失败", "在HTTP请求中发生了一个错误。")
 		check_model_button.disabled = false

@@ -268,6 +268,24 @@ class ModelManager:
 		minimax_m2_model.supplier_id = minimax_supplier.id
 		minimax_supplier.models.append(minimax_m2_model)
 
+		# 添加默认Gemini供应商
+		var gemini_supplier = SupplierInfo.new()
+		gemini_supplier.name = "Gemini"
+		gemini_supplier.base_url = "https://generativelanguage.googleapis.com/v1beta"
+		gemini_supplier.api_key = ""
+		gemini_supplier.provider = "gemini"
+		suppliers.append(gemini_supplier)
+
+		var gemini_flash_preview = ModelInfo.new()
+		gemini_flash_preview.name = "gemini-3-flash-preview"
+		gemini_flash_preview.model_name = "gemini-3-flash-preview"
+		gemini_flash_preview.supports_thinking = false
+		gemini_flash_preview.supports_tools = false
+		gemini_flash_preview.max_tokens = 64 * 1024
+		gemini_flash_preview.active = false
+		gemini_flash_preview.supplier_id = gemini_supplier.id
+		gemini_supplier.models.append(gemini_flash_preview)
+
 		# 添加默认OpenRouter供应商
 		var openrouter_supplier = SupplierInfo.new()
 		openrouter_supplier.name = "Open Router"
