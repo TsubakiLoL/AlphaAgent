@@ -15,7 +15,7 @@ func _get_tool_short_description() -> String:
 	return "调用编辑器接口更新脚本文件的内容。"
 
 func _get_tool_description() -> String:
-	return "直接调用编辑器接口更新脚本文件的内容。根据行号和删除的行数量，在对应行删除若干行然后插入内容。如果不删除，则会在对应行**之前**添加内容。**依赖**：使用本工具修改代码后，代码的行号会发生变化，必须使用read_file工具查看执行结果。\n\n**特殊标记系统（ALPHA_AGENT专用）**：\n为避免JSON转义问题，请使用以下特殊标记代替转义字符：\n- 换行符：`{ALPHA_AGENT_NEWLINE_CHAR}`\n- 制表符：`{ALPHA_AGENT_TAB_CHAR}`\n- 双引号：`{ALPHA_AGENT_QUOTE_CHAR}`（仅当需要在字符串字面量中时）\n\n工具会自动将这些标记转换为对应的实际字符。**注意**：这些标记仅在本工具中有效，其他工具不会识别。\n\n**示例**：\n想要插入：`\\tprint(\"hello\")` 后换行，再写 `\\tprint(\"world\")`\n应该写成：`{ALPHA_AGENT_TAB_CHAR}print({ALPHA_AGENT_QUOTE_CHAR}hello{ALPHA_AGENT_QUOTE_CHAR}){ALPHA_AGENT_NEWLINE_CHAR}{ALPHA_AGENT_TAB_CHAR}print({ALPHA_AGENT_QUOTE_CHAR}world{ALPHA_AGENT_QUOTE_CHAR})`".format({
+	return "直接调用编辑器接口更新脚本文件（仅支持 `.gd`）的内容。根据行号和删除的行数量，在对应行删除若干行然后插入内容。如果不删除，则会在对应行**之前**添加内容。**依赖**：使用本工具修改代码后，代码的行号会发生变化，必须使用read_file工具查看执行结果。\n\n**特殊标记系统（ALPHA_AGENT专用）**：\n为避免JSON转义问题，请使用以下特殊标记代替转义字符：\n- 换行符：`{ALPHA_AGENT_NEWLINE_CHAR}`\n- 制表符：`{ALPHA_AGENT_TAB_CHAR}`\n- 双引号：`{ALPHA_AGENT_QUOTE_CHAR}`（仅当需要在字符串字面量中时）\n\n工具会自动将这些标记转换为对应的实际字符。**注意**：这些标记仅在本工具中有效，其他工具不会识别。\n\n**示例**：\n想要插入：`\\tprint(\"hello\")` 后换行，再写 `\\tprint(\"world\")`\n应该写成：`{ALPHA_AGENT_TAB_CHAR}print({ALPHA_AGENT_QUOTE_CHAR}hello{ALPHA_AGENT_QUOTE_CHAR}){ALPHA_AGENT_NEWLINE_CHAR}{ALPHA_AGENT_TAB_CHAR}print({ALPHA_AGENT_QUOTE_CHAR}world{ALPHA_AGENT_QUOTE_CHAR})`".format({
 		"ALPHA_AGENT_NEWLINE_CHAR": special_agent_chars.newline.origin_char,
 		"ALPHA_AGENT_TAB_CHAR": special_agent_chars.tab.origin_char,
 		"ALPHA_AGENT_QUOTE_CHAR": special_agent_chars.quote.origin_char,
@@ -27,7 +27,7 @@ func _get_tool_parameters() -> Dictionary:
 		"properties": {
 			"script_path": {
 				"type": "string",
-				"description": "需要打开的资源路径，必须是以res://开头的绝对路径。文件必须存在。"
+				"description": "需要打开的资源路径，必须是以res://开头且以.gd结尾的绝对路径。文件必须存在。"
 			},
 			"content": {
 				"type": "string",
@@ -59,6 +59,8 @@ func do_action(tool_call: AgentModelUtils.ToolCallsInfo) -> Dictionary:
 	var json = JSON.parse_string(tool_call.function.arguments)
 	if not json == null and json.has("script_path") and json.has("content") and json.has("line") and json.has("delete_line_count"):
 		var script_path = json.script_path
+		if not (script_path as String).to_lower().ends_with(".gd"):
+			return { "error": "调用失败：script_path 必须是以 .gd 结尾的脚本文件。" }
 		var content := json.content as String
 		var line := json.line as int
 		var delete_line_count = json.delete_line_count

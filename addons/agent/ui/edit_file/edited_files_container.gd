@@ -19,7 +19,7 @@ func generate_edited_file_list(temp_file_array: Array[AgentTempFileManager.Edite
 	for temp_file in temp_file_array:
 		var edit_file_item : AgentEditedFileItem = EDITED_FILE_ITEM.instantiate()
 		add_child(edit_file_item)
-		print("22", temp_file.target_path)
+		# print("22", temp_file.target_path)
 		edit_file_item.set_file_name(temp_file.target_path)
 		edit_file_item.show_edit_file.connect(on_show_edit_file.bind(temp_file, edit_file_item))
 		edit_file_item.accept.connect(on_accept_target.bind(temp_file, edit_file_item))
