@@ -29,12 +29,21 @@ class SkillManager:
 				DirAccess.copy_absolute(DEFAULT_SKILLS_DIR + file_name, skill_directory + file_name)
 
 	func load_skills():
+		skills.clear()
+		skill_map.clear()
+		skill_file_path_map.clear()
 		var files = DirAccess.get_files_at(skill_directory)
 		for file_name in files:
-			var skill = load(skill_directory + file_name) as AgentSkillResource
+			if not (file_name.ends_with(".tres") or file_name.ends_with(".res")):
+				continue
+			var file_path = skill_directory + file_name
+			var skill = load(file_path) as AgentSkillResource
+			if skill == null:
+				AlphaAgentPlugin.print_alpha_message("跳过无效技能资源: {0}".format([file_path]))
+				continue
 			skills.append(skill)
 			skill_map[skill.skill_name] = skill
-			skill_file_path_map[skill_directory + file_name] = skill
+			skill_file_path_map[file_path] = skill
 
 		AlphaAgentPlugin.print_alpha_message("{0}个技能加载完成".format([skills.size()]))
 

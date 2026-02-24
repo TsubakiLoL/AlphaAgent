@@ -595,7 +595,8 @@ func on_click_back_chat_button():
 
 func on_stop_chat():
 	AlphaAgentPlugin.is_chat_stopped = true
-	current_chat_stream.close()
+	if current_chat_stream and is_instance_valid(current_chat_stream):
+		current_chat_stream.close()
 	input_container.disable = false
 	input_container.switch_button_to("Send")
 	if current_message_item:

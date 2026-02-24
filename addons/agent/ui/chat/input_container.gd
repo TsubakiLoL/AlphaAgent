@@ -19,12 +19,12 @@ extends MarginContainer
 
 const REFERENCE_ITEM = preload("uid://bewckbivwp036")
 
-signal send_message(message: Dictionary, message_content: String, use_thinking: bool)
+signal send_message(message: Dictionary, message_content: String)
 signal stop_chat
 signal show_help
 signal show_setting
 signal show_memory
-signal model_changed(model_id: String)
+signal model_changed(supplier_id: String, model_id: String)
 
 enum MenuListType {
 	None,
@@ -302,7 +302,9 @@ func on_click_clear_button():
 
 ## 发送信息
 func on_click_send_message():
-	var message_text = user_input.text
+	var message_text = user_input.text.strip_edges(true, true)
+	if message_text.is_empty():
+		return
 
 	# 检查是否为命令
 	if message_text.begins_with("/"):
@@ -411,8 +413,9 @@ func _on_user_input_gui_input(event: InputEvent) -> void:
 		return
 	var send_shortcut = AlphaAgentPlugin.global_setting.send_shortcut
 	if event is InputEventKey:
+		var is_enter_key = event.keycode == KEY_ENTER or event.keycode == KEY_KP_ENTER
 		# 普通enter键
-		if event.keycode == KEY_ENTER and \
+		if is_enter_key and \
 			not event.alt_pressed and \
 			not event.shift_pressed and \
 			not event.ctrl_pressed and \
@@ -423,15 +426,17 @@ func _on_user_input_gui_input(event: InputEvent) -> void:
 				return
 			elif send_shortcut == AlphaAgentPlugin.SendShotcut.Enter:
 				on_click_send_message()
+				accept_event()
 
 			elif send_shortcut == AlphaAgentPlugin.SendShotcut.CtrlEnter:
 				user_input.insert_text_at_caret("\n")
+				accept_event()
 
 		# ctrl+enter键 发送消息
 		if event.is_command_or_control_pressed() and \
 			not event.alt_pressed and \
 			not event.shift_pressed and \
-			event.keycode == KEY_ENTER and \
+			is_enter_key and \
 			event.pressed:
 
 			if send_shortcut == AlphaAgentPlugin.SendShotcut.None:
@@ -440,6 +445,7 @@ func _on_user_input_gui_input(event: InputEvent) -> void:
 				return
 			elif send_shortcut == AlphaAgentPlugin.SendShotcut.CtrlEnter:
 				on_click_send_message()
+				accept_event()
 
 func switch_button_to(button_name: String):
 	if button_name == "Send":

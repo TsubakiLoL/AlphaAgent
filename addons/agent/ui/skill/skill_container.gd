@@ -54,6 +54,8 @@ func add_skill_nodes():
 
 	var skills = skill_manager.skills
 	for skill in skills:
+		if skill == null:
+			continue
 		var skill_item = SKILL_ITEM.instantiate()
 		skill_list.add_child(skill_item)
 		skill_item.set_skill(skill)
@@ -61,6 +63,8 @@ func add_skill_nodes():
 		skill_item.delete.connect(on_delete_skill_button_pressed.bind(skill, skill_item))
 
 func on_edit_skill_button_pressed(skill: AgentSkillResource):
+	if skill == null:
+		return
 	skill_list_container.hide()
 	skill_edit_container.show()
 	edited_skill = skill
