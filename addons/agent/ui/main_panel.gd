@@ -72,6 +72,8 @@ var current_random_message_id: String = ""
 # 当前使用的聊天流客户端
 var current_chat_stream = null
 var current_title_chat = null
+var auto_scroll_enabled: bool = true
+const AUTO_SCROLL_BOTTOM_TOLERANCE := 10.0
 
 func _ready() -> void:
 	show_container(chat_container)
@@ -86,6 +88,7 @@ func _ready() -> void:
 
 	# 初始化角色选择
 	_init_role_selector()
+	_bind_message_scroll_events()
 
 	back_chat_button.pressed.connect(on_click_back_chat_button)
 	new_chat_button.pressed.connect(on_click_new_chat_button)
@@ -191,6 +194,7 @@ func on_input_container_send_message(user_message: Dictionary, message_content: 
 	show_container(chat_container)
 	welcome_message.hide()
 	message_container.show()
+	auto_scroll_enabled = true
 
 	reset_message_info()
 
@@ -398,6 +402,7 @@ func clear():
 	welcome_message.show()
 	message_container.hide()
 	reset_message_info()
+	auto_scroll_enabled = true
 
 	first_chat = true
 	current_title = "新对话"
@@ -497,6 +502,7 @@ func on_recovery_history(history_item: AgentHistoryAndTitle.HistoryItem):
 	first_chat = false
 	welcome_message.hide()
 	message_container.show()
+	auto_scroll_enabled = true
 
 	current_history_item = history_item
 	current_id = history_item.id
@@ -590,6 +596,9 @@ func show_container(container: Control):
 	for c: Control in container_list:
 		c.visible = container == c
 
+	if container == chat_container:
+		auto_scroll_enabled = true
+
 func on_click_back_chat_button():
 	show_container(chat_container)
 
@@ -654,4 +663,20 @@ func on_copy_output_message(message_item_node: AgentChatMessageItem):
 	DisplayServer.clipboard_set("\n".join(assistant_result))
 
 func scroll_message_container_to_bottom():
+	if not auto_scroll_enabled:
+		return
 	message_container.get_v_scroll_bar().set_as_ratio(1.0)
+
+func _bind_message_scroll_events():
+	var v_scroll_bar := message_container.get_v_scroll_bar()
+	if v_scroll_bar:
+		v_scroll_bar.value_changed.connect(_on_message_scroll_changed)
+
+func _on_message_scroll_changed(_value: float):
+	auto_scroll_enabled = _is_message_scroll_at_bottom()
+
+func _is_message_scroll_at_bottom() -> bool:
+	var v_scroll_bar := message_container.get_v_scroll_bar()
+	if not v_scroll_bar:
+		return true
+	return (v_scroll_bar.value + v_scroll_bar.page) >= (v_scroll_bar.max_value - AUTO_SCROLL_BOTTOM_TOLERANCE)
