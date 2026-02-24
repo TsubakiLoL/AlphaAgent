@@ -29,6 +29,7 @@ All notable changes to this project will be documented in this file.
   - 新增全局 HTTP 代理设置，用于模型请求场景配置。
 - **交互优化**:
   - 新增供应商官网跳转链接，支持从供应商配置直接访问官网。
+  - 添加反馈群链接，可以跳转加入反馈qq群。
 
 ### 🐛 Bug Fixes (问题修复)
 - 修复记忆面板中切换 Godot 侧边栏时记忆数量变化错误的问题。
