@@ -200,20 +200,54 @@ class RoleManager:
 				return role
 		return null
 
-	func add_role(role: RoleInfo):
+	func _normalize_role_name(role_name: String) -> String:
+		return role_name.strip_edges(true, true)
+
+	func has_role_name(role_name: String, exclude_role_id: String = "") -> bool:
+		var normalized_name = _normalize_role_name(role_name)
+		for role in roles:
+			if exclude_role_id != "" and role.id == exclude_role_id:
+				continue
+			if _normalize_role_name(role.name) == normalized_name:
+				return true
+		return false
+
+	func validate_role_name(role_name: String, exclude_role_id: String = "") -> String:
+		var normalized_name = _normalize_role_name(role_name)
+		if normalized_name.is_empty():
+			return "角色名称不能为空。"
+		if has_role_name(normalized_name, exclude_role_id):
+			return "角色名称已存在，请使用其他名称。"
+		return ""
+
+	func add_role(role: RoleInfo) -> bool:
+		var error_msg = validate_role_name(role.name)
+		if error_msg != "":
+			printerr("新增角色失败：", error_msg)
+			return false
+		role.name = _normalize_role_name(role.name)
 		roles.append(role)
 		save_datas()
+		return true
 
 	func remove_role(role: RoleInfo):
 		roles.remove_at(roles.find(role))
 		save_datas()
 
-	func update_role(role: RoleInfo):
+	func update_role(role: RoleInfo) -> bool:
 		var old_role = get_role_by_id(role.id)
-		old_role.name = role.name
+		if old_role == null:
+			printerr("更新角色失败：未找到角色 id=", role.id)
+			return false
+		var error_msg = validate_role_name(role.name, role.id)
+		if error_msg != "":
+			printerr("更新角色失败：", error_msg)
+			return false
+		old_role.name = _normalize_role_name(role.name)
 		old_role.prompt = role.prompt
 		old_role.tools = role.tools
 		save_datas()
+		return true
 
 	func set_current_role(role_id: String):
 		current_role_id = role_id
