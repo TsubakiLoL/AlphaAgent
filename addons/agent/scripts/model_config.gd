@@ -362,14 +362,19 @@ class ModelManager:
 
 		save_datas()
 
+		var model_size = suppliers.reduce(func(sum, supplier): return supplier.models.size() + sum, 0)
+		AlphaAgentPlugin.print_alpha_message("{0}个默认供应商及{1}个模型创建完成".format([suppliers.size(), model_size]))
+
 
 	func load_models():
 		var file_content = FileAccess.get_file_as_string(config_file)
 		if FileAccess.get_open_error() != OK:
+			AlphaAgentPlugin.print_alpha_message("模型配置文件不存在，将创建默认供应商...")
 			return
 
 		var json = JSON.parse_string(file_content)
 		if json == null:
+			AlphaAgentPlugin.print_alpha_message("模型配置文件解析失败，将创建默认供应商...")
 			return
 
 		current_model_id = json.get("current_model_id", "")

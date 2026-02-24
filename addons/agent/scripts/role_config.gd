@@ -108,10 +108,6 @@ class RoleManager:
 		_ensure_config_dir()
 		load_roles()
 
-		# 如果没有角色，添加默认的角色
-		if roles.is_empty():
-			add_default_roles()
-
 	func _ensure_config_dir():
 		var dir_path = config_file.get_base_dir()
 		if not DirAccess.dir_exists_absolute(dir_path):
@@ -120,9 +116,11 @@ class RoleManager:
 	func load_roles():
 		var file_content = FileAccess.get_file_as_string(config_file)
 		if FileAccess.get_open_error() != OK:
+			AlphaAgentPlugin.print_alpha_message("角色配置文件不存在，将创建默认角色...")
 			return
 		var json = JSON.parse_string(file_content)
 		if json == null:
+			AlphaAgentPlugin.print_alpha_message("角色配置文件解析失败，将创建默认角色...")
 			return
 		current_role_id = json.get("current_role_id", "")
 		roles = json.get("roles", []).map(func(r: Dictionary): return RoleInfo.from_dict(r))
@@ -176,6 +174,8 @@ class RoleManager:
 		current_role_id = default_role.id
 
 		save_datas()
+
+		AlphaAgentPlugin.print_alpha_message("{0}个默认角色创建完成".format([roles.size()]))
 
 
 	func save_datas():

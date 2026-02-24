@@ -15,20 +15,25 @@ func _disable_plugin() -> void:
 
 func _enter_tree() -> void:
 	print_greetings()
-	
-	# 初始化全局设置
-	global_setting.load_global_setting()
-	
+
 	# 初始化临时文件管理器
 	AgentTempFileManager.get_instance().init()
-	
+
 	var main_panel = MAIN_PANEL.instantiate()
 	add_control_to_dock(EditorPlugin.DOCK_SLOT_RIGHT_UL, main_panel)
 
-	# 初始化单例并设置 main_panel
+	# 初始化单例并设置 main_panel（必须在 load_global_setting 之前）
 	var singleton = AlphaAgentSingleton.get_instance()
 	singleton.set_main_panel(main_panel)
 	singleton.set_editor_plugin(self)
+
+	# 初始化全局设置（在 main_panel 设置完成后）
+	await global_setting.load_global_setting()
+
+	# 所有初始化完成后打印结束语
+	print_alpha_message("==$==*----*===*----*===*----*==$==")
+	print_alpha_message("初始化结束，欢迎使用 [b]Alpha[/b]，始于初心，无限可能。")
+	print_alpha_message("更多详细信息请查看：[url href='https://godotvillage.github.io/alpha/']Alpha 官方网站[/url]")
 
 
 func _exit_tree() -> void:
@@ -42,11 +47,6 @@ func _exit_tree() -> void:
 	# 清理单例引用
 	singleton.set_main_panel(null)
 	singleton.set_editor_plugin(null)
-
-func _ready() -> void:
-	print_alpha_message("==$==*----*===*----*===*----*==$==")
-	print_alpha_message("初始化结束，欢迎使用 [b]Alpha[/b]，始于初心，无限可能。")
-	print_alpha_message("更多详细信息请查看：[url href='https://godotvillage.github.io/alpha/']Alpha 官方网站[/url]")
 
 func print_greetings():
 	print_alpha_message("==$==*----*===*----*===*----*==$==")
@@ -130,6 +130,10 @@ class GlobalSetting:
 
 		# 初始化角色管理器
 		role_manager = AgentRoleConfig.RoleManager.new(roles_file)
+
+		# 如果没有角色，添加默认角色（需要 await 等待工具列表加载）
+		if role_manager.roles.is_empty():
+			await role_manager.add_default_roles()
 
 		# 初始化技能管理器
 		skill_manager = AgentSkillConfig.SkillManager.new(skill_directory)

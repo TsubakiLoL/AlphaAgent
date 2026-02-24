@@ -1,6 +1,6 @@
 # Godot AI Agent 工具文档
 
-本文档仅保留工具介绍文案。  
+本文档仅保留工具介绍文案。
 工具清单来源于 `addons/agent/tools/tools_nodes` 目录下的全部工具脚本。
 
 ## 工具列表

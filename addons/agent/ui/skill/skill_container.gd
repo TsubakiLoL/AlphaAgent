@@ -41,7 +41,18 @@ func clear_skill_nodes():
 
 
 func add_skill_nodes():
-	var skills = AlphaAgentPlugin.global_setting.skill_manager.skills
+	# 等待 skill_manager 初始化完成
+	var max_wait_frames = 10
+	var wait_count = 0
+	while AlphaAgentPlugin.global_setting.skill_manager == null and wait_count < max_wait_frames:
+		await get_tree().process_frame
+		wait_count += 1
+
+	var skill_manager = AlphaAgentPlugin.global_setting.skill_manager
+	if skill_manager == null:
+		return
+
+	var skills = skill_manager.skills
 	for skill in skills:
 		var skill_item = SKILL_ITEM.instantiate()
 		skill_list.add_child(skill_item)

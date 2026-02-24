@@ -44,6 +44,10 @@ func _ready() -> void:
 	add_role_button.pressed.connect(on_click_add_role_button)
 	supplier_option_window.close_requested.connect(supplier_option_window.hide)
 
+	# 连接角色变更信号
+	var singleton = AlphaAgentSingleton.get_instance()
+	singleton.roles_changed.connect(refresh_roles)
+
 func init_item_values():
 	for setting_item in setting_item_nodes:
 		if setting_item is AgentSettingItemBase:
@@ -75,9 +79,20 @@ func _on_show_setting():
 	if visible:
 		for supplier in suppliers:
 			supplier.update_current_model()
+		# 刷新角色列表
+		refresh_roles()
 
 func init_roles():
-	await get_tree().process_frame
+	# 等待 role_manager 初始化完成
+	var max_wait_frames = 10
+	var wait_count = 0
+	while AlphaAgentPlugin.global_setting.role_manager == null and wait_count < max_wait_frames:
+		await get_tree().process_frame
+		wait_count += 1
+
+	refresh_roles()
+
+func refresh_roles():
 	var role_manager = AlphaAgentPlugin.global_setting.role_manager
 	if role_manager == null:
 		return
