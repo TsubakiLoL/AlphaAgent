@@ -91,9 +91,12 @@ func update_model_selector(suppliers: Array, current_model_id: String, current_m
 		return
 
 	model_button.clear()
+	model_id_list = {}
+	use_thinking.visible = false
+	use_thinking.button_pressed = false
 
 	var current_idx = 0
-	var supplier_idx = 0
+	var first_model_idx = -1
 	var idx = 0
 
 	for supplier in suppliers:
@@ -106,6 +109,8 @@ func update_model_selector(suppliers: Array, current_model_id: String, current_m
 		# 添加模型
 		for model in models:
 			model_button.add_item(model.name)
+			if first_model_idx == -1:
+				first_model_idx = idx
 			if model.id == current_model_id:
 				current_idx = idx
 				var supports_thinking: bool = model.supports_thinking
@@ -122,12 +127,20 @@ func update_model_selector(suppliers: Array, current_model_id: String, current_m
 		config_model_tip.hide()
 
 		# 设置当前选中的模型
+		if not model_id_list.has(current_idx):
+			current_idx = first_model_idx
 		model_button.selected = current_idx
+		if current_idx != -1:
+			_on_model_selected(current_idx)
 
 # 模型选择回调
 func _on_model_selected(idx: int):
 	var model_manager = AlphaAgentPlugin.global_setting.model_manager
 	if not model_manager:
+		return
+	if not model_id_list.has(idx):
+		use_thinking.visible = false
+		use_thinking.button_pressed = false
 		return
 
 	var model_id = model_id_list[idx]
@@ -138,6 +151,9 @@ func _on_model_selected(idx: int):
 		use_thinking.visible = supports_thinking
 		use_thinking.button_pressed = supports_thinking
 		model_changed.emit(supplier_id, model_id)
+	else:
+		use_thinking.visible = false
+		use_thinking.button_pressed = false
 
 func update_role_selector(roles: Array, current_role_id: String):
 	if not role_button:
