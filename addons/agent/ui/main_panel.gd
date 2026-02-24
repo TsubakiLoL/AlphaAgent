@@ -419,6 +419,9 @@ func clear():
 func on_agent_finish(finish_reason: String, total_tokens: float):
 	#print("finish_reason ", finish_reason)
 	#print("total_tokens ", total_tokens)
+	var use_thinking_for_history := false
+	if current_chat_stream:
+		use_thinking_for_history = current_chat_stream.use_thinking
 
 	if finish_reason != "tool_calls":
 		AlphaAgentPlugin.is_chat_stopped = true
@@ -466,13 +469,13 @@ func on_agent_finish(finish_reason: String, total_tokens: float):
 		current_title_chat.post_message(title_messages)
 
 	#current_history_item.mode = input_container.get_input_mode()
-	current_history_item.use_thinking = current_chat_stream.use_thinking
-	current_history_item.id = current_id
-	current_history_item.message = messages
-	current_history_item.title = current_title
-	current_history_item.time = current_time
-
-	history_and_title.update_history(current_id, current_history_item)
+	if current_history_item:
+		current_history_item.use_thinking = use_thinking_for_history
+		current_history_item.id = current_id
+		current_history_item.message = messages
+		current_history_item.title = current_title
+		current_history_item.time = current_time
+		history_and_title.update_history(current_id, current_history_item)
 
 func on_title_generate_finish(message: String, _think_msg: String):
 	current_title = message

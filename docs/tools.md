@@ -9,7 +9,7 @@
 |---|---|---|
 | 1 | `add_node_to_scene` | 添加节点到场景中。 |
 | 2 | `add_script_to_scene` | 将脚本加载到节点上。 |
-| 3 | `check_script_error` | 检查脚本中的语法错误。 |
+| 3 | `check_script_error` | 检查脚本中的语法与静态解析错误。 |
 | 4 | `create_folder` | 创建文件夹。 |
 | 5 | `create_scene_or_resource` | 创建场景或资源文件。 |
 | 6 | `create_script` | 通过继承创建脚本文件。 |
@@ -23,7 +23,7 @@
 | 14 | `global_search` | 全局搜索脚本文件。 |
 | 15 | `list_scene_nodes` | 列出场景中的所有节点信息。 |
 | 16 | `load_skill` | 加载技能。 |
-| 17 | `open_resource` | 使用编辑器打开资源文件。 |
+| 17 | `open_resource` | 使用编辑器打开资源文件（支持 `scene` / `script` / `resource`）。 |
 | 18 | `read_file` | 读取文件内容。 |
 | 19 | `read_script_outline` | 读取脚本大纲（声明与行号范围）。 |
 | 20 | `resource_inspector` | 获取资源的文件结构。 |

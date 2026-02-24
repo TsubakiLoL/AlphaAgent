@@ -15,7 +15,7 @@ func _get_tool_short_description() -> String:
 	return "调用编辑器接口更新脚本文件的内容。"
 
 func _get_tool_description() -> String:
-	return "直接调用编辑器接口更新脚本文件（仅支持 `.gd`）的内容。根据行号和删除的行数量，在对应行删除若干行然后插入内容。如果不删除，则会在对应行**之前**添加内容。**依赖**：使用本工具修改代码后，代码的行号会发生变化，必须使用read_file工具查看执行结果。\n\n**特殊标记系统（ALPHA_AGENT专用）**：\n为避免JSON转义问题，请使用以下特殊标记代替转义字符：\n- 换行符：`{ALPHA_AGENT_NEWLINE_CHAR}`\n- 制表符：`{ALPHA_AGENT_TAB_CHAR}`\n- 双引号：`{ALPHA_AGENT_QUOTE_CHAR}`（仅当需要在字符串字面量中时）\n\n工具会自动将这些标记转换为对应的实际字符。**注意**：这些标记仅在本工具中有效，其他工具不会识别。\n\n**示例**：\n想要插入：`\\tprint(\"hello\")` 后换行，再写 `\\tprint(\"world\")`\n应该写成：`{ALPHA_AGENT_TAB_CHAR}print({ALPHA_AGENT_QUOTE_CHAR}hello{ALPHA_AGENT_QUOTE_CHAR}){ALPHA_AGENT_NEWLINE_CHAR}{ALPHA_AGENT_TAB_CHAR}print({ALPHA_AGENT_QUOTE_CHAR}world{ALPHA_AGENT_QUOTE_CHAR})`".format({
+	return "直接调用编辑器接口更新脚本文件（仅支持 `.gd`）的内容。\n\n支持三种模式（`mode`）：\n- `replace`（默认）：根据 `line` 和 `delete_line_count` 先删除，再在该位置插入 `content`\n- `insert`：仅在 `line` 位置前插入 `content`，不执行删除\n- `delete`：仅删除，从 `line` 开始删除 `delete_line_count` 行，不插入内容\n\n**依赖**：使用本工具修改代码后，代码的行号会发生变化，必须使用read_file工具查看执行结果。\n\n**特殊标记系统（ALPHA_AGENT专用）**：\n为避免JSON转义问题，请使用以下特殊标记代替转义字符：\n- 换行符：`{ALPHA_AGENT_NEWLINE_CHAR}`\n- 制表符：`{ALPHA_AGENT_TAB_CHAR}`\n- 双引号：`{ALPHA_AGENT_QUOTE_CHAR}`（仅当需要在字符串字面量中时）\n\n工具会自动将这些标记转换为对应的实际字符。**注意**：这些标记仅在本工具中有效，其他工具不会识别。\n\n**示例**：\n想要插入：`\\tprint(\"hello\")` 后换行，再写 `\\tprint(\"world\")`\n应该写成：`{ALPHA_AGENT_TAB_CHAR}print({ALPHA_AGENT_QUOTE_CHAR}hello{ALPHA_AGENT_QUOTE_CHAR}){ALPHA_AGENT_NEWLINE_CHAR}{ALPHA_AGENT_TAB_CHAR}print({ALPHA_AGENT_QUOTE_CHAR}world{ALPHA_AGENT_QUOTE_CHAR})`".format({
 		"ALPHA_AGENT_NEWLINE_CHAR": special_agent_chars.newline.origin_char,
 		"ALPHA_AGENT_TAB_CHAR": special_agent_chars.tab.origin_char,
 		"ALPHA_AGENT_QUOTE_CHAR": special_agent_chars.quote.origin_char,
@@ -44,6 +44,11 @@ func _get_tool_parameters() -> Dictionary:
 			"delete_line_count": {
 				"type": "number",
 				"description": "需要删除的行的数量，为0表示不删除。建议使用整数。"
+			},
+			"mode": {
+				"type": "string",
+				"enum": ["replace", "insert", "delete"],
+				"description": "写入模式。replace=先删后插（默认）；insert=仅插入，不删除；delete=仅删除，不插入。"
 			}
 		},
 		"required": ["script_path", "content", "line", "delete_line_count"]
@@ -63,7 +68,16 @@ func do_action(tool_call: AgentModelUtils.ToolCallsInfo) -> Dictionary:
 			return { "error": "调用失败：script_path 必须是以 .gd 结尾的脚本文件。" }
 		var content := json.content as String
 		var line := json.line as int
-		var delete_line_count = json.delete_line_count
+		var delete_line_count := json.delete_line_count as int
+		var mode := str(json.get("mode", "replace")).to_lower()
+		if not ["replace", "insert", "delete"].has(mode):
+			return { "error": "调用失败：mode 仅支持 replace、insert 或 delete。" }
+		if mode == "replace" and delete_line_count <= 0:
+			return { "error": "调用失败：mode=replace 时 delete_line_count 必须大于0。" }
+		if mode == "delete" and delete_line_count <= 0:
+			return { "error": "调用失败：mode=delete 时 delete_line_count 必须大于0。" }
+		if mode == "delete" and content != "":
+			return { "error": "调用失败：mode=delete 时 content 必须为空字符串。" }
 		var resource: Script = load(script_path)
 
 		AgentTempFileManager.get_instance().create_temp_file(script_path)
@@ -76,9 +90,11 @@ func do_action(tool_call: AgentModelUtils.ToolCallsInfo) -> Dictionary:
 		EditorInterface.edit_script(resource)
 
 		var editor: CodeEdit = EditorInterface.get_script_editor().get_current_editor().get_base_editor()
-		for i in delete_line_count:
-			editor.remove_line_at(max(line - 1, 0))
-		editor.insert_line_at(max(line - 1, 0), content)
+		if mode == "replace" or mode == "delete":
+			for i in delete_line_count:
+				editor.remove_line_at(max(line - 1, 0))
+		if mode != "delete" and content != "":
+			editor.insert_line_at(max(line - 1, 0), content)
 
 		await get_tree().process_frame
 		var save_input_key := InputEventKey.new()

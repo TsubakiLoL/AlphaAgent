@@ -21,7 +21,7 @@ func _get_tool_parameters() -> Dictionary:
 			},
 			"type": {
 				"type": "string",
-				"enum": ["scene", "script"],
+				"enum": ["scene", "script", "resource"],
 				"description": "打开的类型",
 			},
 			"line": {
@@ -50,12 +50,46 @@ func do_action(tool_call: AgentModelUtils.ToolCallsInfo) -> Dictionary:
 		match type:
 			"scene":
 				EditorInterface.open_scene_from_path(path)
+				await get_tree().process_frame
+				var edited_scene_root = EditorInterface.get_edited_scene_root()
+				if edited_scene_root == null or edited_scene_root.get_scene_file_path() != path:
+					return { "error": "打开失败：当前编辑场景与目标场景不一致。" }
 				return { "success": "打开成功" }
 			"script":
 				var resource = load(path)
+				if resource == null:
+					return { "error": "资源加载失败，请检查path是否正确。" }
+				if not resource is Script:
+					return { "error": "类型错误：script 模式仅支持脚本资源。" }
 				var line = json.get("line", -1)
 				var column = json.get("column", 0)
 				EditorInterface.edit_script(resource, line, column)
+				await get_tree().process_frame
+				var current_script = EditorInterface.get_script_editor().get_current_script()
+				if current_script == null or current_script.resource_path != path:
+					return { "error": "打开失败：当前编辑脚本与目标脚本不一致。" }
+				return { "success": "打开成功" }
+			"resource":
+				var resource = load(path)
+				if resource == null:
+					return { "error": "资源加载失败，请检查path是否正确。" }
+				EditorInterface.edit_resource(resource)
+				await get_tree().process_frame
+				var edited_object = EditorInterface.get_inspector().get_edited_object()
+				if edited_object == null:
+					return { "error": "打开失败：Inspector 当前没有编辑对象。" }
+				if not edited_object is Resource:
+					return {
+						"error": "打开失败：Inspector 当前对象不是 Resource。",
+						"object_type": edited_object.get_class()
+					}
+				var edited_resource := edited_object as Resource
+				if edited_resource.resource_path != path:
+					return {
+						"error": "打开失败：Inspector 当前资源路径与目标不一致。",
+						"current_path": edited_resource.resource_path,
+						"target_path": path
+					}
 				return { "success": "打开成功" }
 			_:
 				return { "error": "错误的type类型" }
