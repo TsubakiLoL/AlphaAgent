@@ -94,6 +94,7 @@ func on_remote_get_models_button_click():
 	remote_get_models_button.disabled = true
 
 	remote_get_models_request.request_completed.connect(self._http_request_completed, CONNECT_ONE_SHOT)
+	AgentModelUtils.apply_proxy_to_http_request(remote_get_models_request)
 
 	var headers = [
 		"Accept: application/json",

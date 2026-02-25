@@ -5,6 +5,9 @@ extends ScrollContainer
 @onready var auto_expand_think_setting: BoxContainer = $SettingPanel/SettingItemsContainer/AutoExpandThinkSetting
 @onready var auto_add_file_ref_setting: BoxContainer = $SettingPanel/SettingItemsContainer/AutoAddFileRefSetting
 @onready var send_shot_cut: BoxContainer = $SettingPanel/SettingItemsContainer/SendShotCut
+@onready var http_proxy_host: BoxContainer = $SettingPanel/SettingItemsContainer/HBoxContainer/HttpProxyHost
+@onready var http_proxy_port: BoxContainer = $SettingPanel/SettingItemsContainer/HBoxContainer/HttpProxyPort
+
 #@onready var config_model_button: Button = $SettingPanel/SettingItemsContainer/ConfigModelButton
 @onready var add_supplier_button: Button = %AddSupplierButton
 @onready var supplier_list: VBoxContainer = %SupplierList
@@ -22,14 +25,15 @@ const EDIT_ROLE_WINDOW = preload("uid://cx0yeuxsc2kui")
 	auto_clear_setting,
 	auto_expand_think_setting,
 	auto_add_file_ref_setting,
-	send_shot_cut
+	send_shot_cut,
+	http_proxy_host,
+	http_proxy_port
 ]
 
 signal config_model
 var suppliers: Array[AgentSupplierItem] = []
 
 func _ready() -> void:
-	AlphaAgentPlugin.global_setting.load_global_setting()
 	init_item_values()
 	supplier_option_button.pressed.connect(show_supplier_option_window)
 	init_signals()
@@ -39,6 +43,10 @@ func _ready() -> void:
 	visibility_changed.connect(_on_show_setting)
 	add_role_button.pressed.connect(on_click_add_role_button)
 	supplier_option_window.close_requested.connect(supplier_option_window.hide)
+
+	# 连接角色变更信号
+	var singleton = AlphaAgentSingleton.get_instance()
+	singleton.roles_changed.connect(refresh_roles)
 
 func init_item_values():
 	for setting_item in setting_item_nodes:
@@ -71,9 +79,20 @@ func _on_show_setting():
 	if visible:
 		for supplier in suppliers:
 			supplier.update_current_model()
+		# 刷新角色列表
+		refresh_roles()
 
 func init_roles():
-	await get_tree().process_frame
+	# 等待 role_manager 初始化完成
+	var max_wait_frames = 10
+	var wait_count = 0
+	while AlphaAgentPlugin.global_setting.role_manager == null and wait_count < max_wait_frames:
+		await get_tree().process_frame
+		wait_count += 1
+
+	refresh_roles()
+
+func refresh_roles():
 	var role_manager = AlphaAgentPlugin.global_setting.role_manager
 	if role_manager == null:
 		return

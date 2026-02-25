@@ -50,6 +50,7 @@ var generatting: bool = false
 ## 发送请求
 func post_message(messages: Array[Dictionary]):
 	tool_calls = []
+	AgentModelUtils.apply_proxy_to_http_client(http_client)
 	if print_log: print("请求消息列表: ", messages)
 
 	# 准备请求头

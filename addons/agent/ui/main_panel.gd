@@ -11,10 +11,13 @@ extends Control
 @onready var history_button: Button = %HistoryButton
 @onready var back_chat_button: Button = %BackChatButton
 @onready var top_bar_buttons: HBoxContainer = %TopBarButtons
+@onready var edited_files_container: AgentEditedFilesContainer = %EditedFilesContainer
 
 @onready var setting_tabs: HBoxContainer = %SettingTabs
 @onready var setting_tab_memory: Button = %SettingTabMemory
 @onready var setting_tab_setting: Button = %SettingTabSetting
+@onready var setting_tab_skill: Button = %SettingTabSkill
+
 @onready var history_and_title: PanelContainer = %HistoryAndTitle
 
 @onready var tools: AgentTools = $Tools
@@ -26,12 +29,15 @@ extends Control
 
 @onready var setting_container: ScrollContainer = %SettingContainer
 @onready var memory_container: VBoxContainer = %MemoryContainer
+@onready var skill_container: VBoxContainer = %SkillContainer
+
 @onready var plan_list: AgentPlanList = %PlanList
 
 @onready var container_list = [
 	chat_container,
 	setting_container,
-	memory_container
+	memory_container,
+	skill_container
 ]
 
 enum MoreButtonIds {
@@ -66,6 +72,8 @@ var current_random_message_id: String = ""
 # 当前使用的聊天流客户端
 var current_chat_stream = null
 var current_title_chat = null
+var auto_scroll_enabled: bool = true
+const AUTO_SCROLL_BOTTOM_TOLERANCE := 10.0
 
 func _ready() -> void:
 	show_container(chat_container)
@@ -80,6 +88,7 @@ func _ready() -> void:
 
 	# 初始化角色选择
 	_init_role_selector()
+	_bind_message_scroll_events()
 
 	back_chat_button.pressed.connect(on_click_back_chat_button)
 	new_chat_button.pressed.connect(on_click_new_chat_button)
@@ -98,6 +107,7 @@ func _ready() -> void:
 
 	setting_tab_memory.pressed.connect(func(): show_container(memory_container))
 	setting_tab_setting.pressed.connect(func(): show_container(setting_container))
+	setting_tab_skill.pressed.connect(func(): show_container(skill_container))
 
 # 连接插件信号（使用单例，始终可用）
 func _connect_plugin_signals():
@@ -171,21 +181,24 @@ func init_message_list():
 				"global_memory": ''.join(AlphaAgentPlugin.global_memory.map(func(m): return "-" + m + "\n")),
 				"role_prompt": current_role.prompt if current_role else "无"
 			}),
-			"id": generate_random_string(16)
+			"id": AlphaUtils.generate_random_string(16)
 		}
 	]
 
 func on_input_container_send_message(user_message: Dictionary, message_content: String):
+	_clear_plan_list_if_all_finished()
+
 	if first_chat:
 		init_message_list()
 
 	show_container(chat_container)
 	welcome_message.hide()
 	message_container.show()
+	auto_scroll_enabled = true
 
 	reset_message_info()
 
-	var random_id = generate_random_string(16)
+	var random_id = AlphaUtils.generate_random_string(16)
 	user_message.id = random_id
 
 	messages.push_back(user_message)
@@ -198,7 +211,12 @@ func on_input_container_send_message(user_message: Dictionary, message_content: 
 
 	send_messages()
 
+func _clear_plan_list_if_all_finished():
+	if plan_list.is_all_finished():
+		plan_list.update_list([])
+
 func send_messages():
+	AlphaAgentPlugin.is_chat_stopped = false
 	var use_thinking = input_container.get_use_thinking()
 	var model_manager = AlphaAgentPlugin.global_setting.model_manager
 
@@ -210,6 +228,21 @@ func send_messages():
 		if supplier.provider == "ollama":
 			current_chat_stream = OllamaChatStream.new()
 			current_title_chat = OllamaChat.new()
+		elif supplier.provider == "minimax":
+			current_chat_stream = MiniMaxChatStream.new()
+			current_title_chat = MiniMaxChat.new()
+			current_chat_stream.secret_key = supplier.api_key
+			current_title_chat.secret_key = supplier.api_key
+		elif supplier.provider == "gemini":
+			current_chat_stream = GeminiChatStream.new()
+			current_title_chat = GeminiChat.new()
+			current_chat_stream.secret_key = supplier.api_key
+			current_title_chat.secret_key = supplier.api_key
+		elif supplier.provider == "moonshot":
+			current_chat_stream = MoonShotChatStream.new()
+			current_title_chat = MoonShotChat.new()
+			current_chat_stream.secret_key = supplier.api_key
+			current_title_chat.secret_key = supplier.api_key
 		elif supplier.provider == "openai" or supplier.provider == "deepseek":
 			current_chat_stream = OpenAIChatStream.new()
 			current_title_chat = OpenAIChat.new()
@@ -255,7 +288,7 @@ func send_messages():
 			# 没有角色时，默认使用所有工具
 			current_chat_stream.tools = tools.get_tools_list()
 
-	current_random_message_id = generate_random_string(16)
+	current_random_message_id = AlphaUtils.generate_random_string(16)
 	current_message_item = MESSAGE_ITEM.instantiate() as AgentChatMessageItem
 	# 始终根据用户选择的 use_thinking 来设置 show_think
 	# 如果模型不支持 thinking，后续会在 on_agent_think 中跳过更新
@@ -310,6 +343,8 @@ func on_use_tool(tool_calls: Array):
 	for tool in tool_calls:
 		#print(tool.id)
 		var content = await tools.use_tool(tool)
+		if AlphaAgentPlugin.is_chat_stopped:
+			return
 
 		messages.push_back({
 			"role": "tool",
@@ -333,21 +368,24 @@ func on_use_tool(tool_calls: Array):
 
 	scroll_message_container_to_bottom()
 
-	current_history_item.title = current_title
-
-	history_and_title.update_history(current_id, current_history_item)
+	if current_history_item:
+		current_history_item.title = current_title
+		history_and_title.update_history(current_id, current_history_item)
 
 func on_generate_error(error_info: Dictionary):
 	#printerr("发生错误")
 	printerr(error_info.error_msg)
 	printerr(error_info.data)
 	#current_message_item.update_think_content(current_think, false)
-	current_message_item.update_error_message(error_info.error_msg, error_info.data)
+	if current_message_item:
+		current_message_item.update_error_message(error_info.error_msg, error_info.data)
+	AlphaAgentPlugin.is_chat_stopped = true
 
 	input_container.disable = false
 	input_container.switch_button_to("Send")
 
 func on_click_new_chat_button():
+	AlphaAgentPlugin.is_chat_stopped = true
 	if current_chat_stream != null and current_chat_stream.generatting:
 		current_chat_stream.close()
 
@@ -364,6 +402,7 @@ func clear():
 	welcome_message.show()
 	message_container.hide()
 	reset_message_info()
+	auto_scroll_enabled = true
 
 	first_chat = true
 	current_title = "新对话"
@@ -385,8 +424,13 @@ func clear():
 func on_agent_finish(finish_reason: String, total_tokens: float):
 	#print("finish_reason ", finish_reason)
 	#print("total_tokens ", total_tokens)
+	var use_thinking_for_history := false
+	if current_chat_stream:
+		use_thinking_for_history = current_chat_stream.use_thinking
 
 	if finish_reason != "tool_calls":
+		AlphaAgentPlugin.is_chat_stopped = true
+		# 彻底结束，否则可能是调用工具
 		input_container.disable = false
 		input_container.switch_button_to("Send")
 		messages.push_back({
@@ -404,14 +448,16 @@ func on_agent_finish(finish_reason: String, total_tokens: float):
 		reset_message_info()
 		if current_chat_stream:
 			current_chat_stream.queue_free()
+		show_edited_file_container()
 
 	input_container.set_usage_label(total_tokens, 128)
 	#print(messages)
 
-	if first_chat:
+	# 仅在本轮对话最终结束时生成标题，避免工具调用中间步骤重复触发并发请求
+	if first_chat and finish_reason != "tool_calls":
 		#print(JSON.stringify(messages))
 		current_history_item = AgentHistoryAndTitle.HistoryItem.new()
-		current_id = generate_random_string(16)
+		current_id = AlphaUtils.generate_random_string(16)
 		current_time = Time.get_datetime_string_from_system()
 		var title_messages: Array[Dictionary] = [
 			{
@@ -428,13 +474,13 @@ func on_agent_finish(finish_reason: String, total_tokens: float):
 		current_title_chat.post_message(title_messages)
 
 	#current_history_item.mode = input_container.get_input_mode()
-	current_history_item.use_thinking = current_chat_stream.use_thinking
-	current_history_item.id = current_id
-	current_history_item.message = messages
-	current_history_item.title = current_title
-	current_history_item.time = current_time
-
-	history_and_title.update_history(current_id, current_history_item)
+	if current_history_item:
+		current_history_item.use_thinking = use_thinking_for_history
+		current_history_item.id = current_id
+		current_history_item.message = messages
+		current_history_item.title = current_title
+		current_history_item.time = current_time
+		history_and_title.update_history(current_id, current_history_item)
 
 func on_title_generate_finish(message: String, _think_msg: String):
 	current_title = message
@@ -446,16 +492,8 @@ func on_title_generate_finish(message: String, _think_msg: String):
 
 	current_title_chat.queue_free()
 
-# 生成随机字符串函数
-func generate_random_string(length: int) -> String:
-	var characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	var result = ""
-
-	for i in range(length):
-		var random_index = randi() % characters.length()
-		result += characters[random_index]
-
-	return result
+func show_edited_file_container():
+	edited_files_container.generate_edited_file_list(AgentTempFileManager.get_instance().temp_file_array)
 
 func on_recovery_history(history_item: AgentHistoryAndTitle.HistoryItem):
 	show_container(chat_container)
@@ -464,6 +502,7 @@ func on_recovery_history(history_item: AgentHistoryAndTitle.HistoryItem):
 	first_chat = false
 	welcome_message.hide()
 	message_container.show()
+	auto_scroll_enabled = true
 
 	current_history_item = history_item
 	current_id = history_item.id
@@ -496,6 +535,7 @@ func on_recovery_history(history_item: AgentHistoryAndTitle.HistoryItem):
 					tool_call_info = AgentModelUtils.ToolCallsInfo.new()
 					tool_call_info.id = tool_call.get("id")
 					tool_call_info.type = tool_call.get("type")
+					tool_call_info.thought_signature = tool_call.get("thought_signature", tool_call.get("thoughtSignature", ""))
 					tool_call_info.function = AgentModelUtils.ToolCallsInfoFunc.new()
 					tool_call_info.function.arguments = tool_call.get("function").get("arguments")
 					tool_call_info.function.name = tool_call.get("function").get("name")
@@ -539,13 +579,16 @@ func show_container(container: Control):
 	back_chat_button.visible = container != chat_container
 	history_and_title.visible = container == chat_container
 
-	if container == memory_container or container == setting_container:
+	if [memory_container, setting_container, skill_container].has(container):
 		setting_tabs.show()
 		top_bar_buttons.hide()
-		if container == memory_container:
-			setting_tab_memory.button_pressed = true
-		if container == setting_container:
-			setting_tab_setting.button_pressed = true
+		match container:
+			memory_container:
+				setting_tab_memory.button_pressed = true
+			setting_container:
+				setting_tab_setting.button_pressed = true
+			skill_container:
+				setting_tab_skill.button_pressed = true
 	else:
 		setting_tabs.hide()
 		top_bar_buttons.show()
@@ -553,11 +596,16 @@ func show_container(container: Control):
 	for c: Control in container_list:
 		c.visible = container == c
 
+	if container == chat_container:
+		auto_scroll_enabled = true
+
 func on_click_back_chat_button():
 	show_container(chat_container)
 
 func on_stop_chat():
-	current_chat_stream.close()
+	AlphaAgentPlugin.is_chat_stopped = true
+	if current_chat_stream and is_instance_valid(current_chat_stream):
+		current_chat_stream.close()
 	input_container.disable = false
 	input_container.switch_button_to("Send")
 	if current_message_item:
@@ -615,4 +663,20 @@ func on_copy_output_message(message_item_node: AgentChatMessageItem):
 	DisplayServer.clipboard_set("\n".join(assistant_result))
 
 func scroll_message_container_to_bottom():
+	if not auto_scroll_enabled:
+		return
 	message_container.get_v_scroll_bar().set_as_ratio(1.0)
+
+func _bind_message_scroll_events():
+	var v_scroll_bar := message_container.get_v_scroll_bar()
+	if v_scroll_bar:
+		v_scroll_bar.value_changed.connect(_on_message_scroll_changed)
+
+func _on_message_scroll_changed(_value: float):
+	auto_scroll_enabled = _is_message_scroll_at_bottom()
+
+func _is_message_scroll_at_bottom() -> bool:
+	var v_scroll_bar := message_container.get_v_scroll_bar()
+	if not v_scroll_bar:
+		return true
+	return (v_scroll_bar.value + v_scroll_bar.page) >= (v_scroll_bar.max_value - AUTO_SCROLL_BOTTOM_TOLERANCE)

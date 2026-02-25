@@ -9,7 +9,7 @@ class SupplierInfo:
 	var name: String = ""
 	var base_url: String = ""
 	var api_key: String = ""
-	var provider: String = "openai"  # 提供商类型: openai, deepseek, ollama
+	var provider: String = "openai"  # 提供商类型: openai, moonshot, deepseek, minimax, gemini, ollama
 	var models: Array = []
 
 	func _init(s_id: String = "", s_name: String = "", s_api_base: String = "",
@@ -149,8 +149,28 @@ class ModelManager:
 		moonshot_supplier.name = "MoonShot"
 		moonshot_supplier.base_url = "https://api.moonshot.cn"
 		moonshot_supplier.api_key = ""
-		moonshot_supplier.provider = "openai"
+		moonshot_supplier.provider = "moonshot"
 		suppliers.append(moonshot_supplier)
+
+		var kimi_k2_5_model = ModelInfo.new()
+		kimi_k2_5_model.name = "Kimi K2.5"
+		kimi_k2_5_model.model_name = "kimi-k2.5"
+		kimi_k2_5_model.supports_thinking = true
+		kimi_k2_5_model.supports_tools = true
+		kimi_k2_5_model.max_tokens = 8 * 1024
+		kimi_k2_5_model.active = false
+		kimi_k2_5_model.supplier_id = moonshot_supplier.id
+		moonshot_supplier.models.append(kimi_k2_5_model)
+
+		var kimi_k2_5_preview_model = ModelInfo.new()
+		kimi_k2_5_preview_model.name = "Kimi K2.5 Preview"
+		kimi_k2_5_preview_model.model_name = "kimi-k2.5-preview"
+		kimi_k2_5_preview_model.supports_thinking = false
+		kimi_k2_5_preview_model.supports_tools = true
+		kimi_k2_5_preview_model.max_tokens = 8 * 1024
+		kimi_k2_5_preview_model.active = false
+		kimi_k2_5_preview_model.supplier_id = moonshot_supplier.id
+		moonshot_supplier.models.append(kimi_k2_5_preview_model)
 
 		var kimi_k2_turbo_preview_model = ModelInfo.new()
 		kimi_k2_turbo_preview_model.name = "Kimi K2 Turbo Preview"
@@ -220,6 +240,92 @@ class ModelManager:
 		qwen_next_80b_a3b_thinking.supplier_id = siliconflow_supplier.id
 		siliconflow_supplier.models.append(qwen_next_80b_a3b_thinking)
 
+		# 添加默认MiniMax供应商
+		var minimax_supplier = SupplierInfo.new()
+		minimax_supplier.name = "MiniMax"
+		minimax_supplier.base_url = "https://api.minimaxi.com/v1"
+		minimax_supplier.api_key = ""
+		minimax_supplier.provider = "minimax"
+		suppliers.append(minimax_supplier)
+
+		var minimax_m25_model = ModelInfo.new()
+		minimax_m25_model.name = "MiniMax-M2.5"
+		minimax_m25_model.model_name = "MiniMax-M2.5"
+		minimax_m25_model.supports_thinking = true
+		minimax_m25_model.supports_tools = true
+		minimax_m25_model.max_tokens = 64 * 1024
+		minimax_m25_model.active = false
+		minimax_m25_model.supplier_id = minimax_supplier.id
+		minimax_supplier.models.append(minimax_m25_model)
+
+		var minimax_m25_hs_model = ModelInfo.new()
+		minimax_m25_hs_model.name = "MiniMax-M2.5-highspeed"
+		minimax_m25_hs_model.model_name = "MiniMax-M2.5-highspeed"
+		minimax_m25_hs_model.supports_thinking = true
+		minimax_m25_hs_model.supports_tools = true
+		minimax_m25_hs_model.max_tokens = 64 * 1024
+		minimax_m25_hs_model.active = false
+		minimax_m25_hs_model.supplier_id = minimax_supplier.id
+		minimax_supplier.models.append(minimax_m25_hs_model)
+
+		var minimax_m21_model = ModelInfo.new()
+		minimax_m21_model.name = "MiniMax-M2.1"
+		minimax_m21_model.model_name = "MiniMax-M2.1"
+		minimax_m21_model.supports_thinking = true
+		minimax_m21_model.supports_tools = true
+		minimax_m21_model.max_tokens = 64 * 1024
+		minimax_m21_model.active = false
+		minimax_m21_model.supplier_id = minimax_supplier.id
+		minimax_supplier.models.append(minimax_m21_model)
+
+		var minimax_m2_model = ModelInfo.new()
+		minimax_m2_model.name = "MiniMax-M2"
+		minimax_m2_model.model_name = "MiniMax-M2"
+		minimax_m2_model.supports_thinking = false
+		minimax_m2_model.supports_tools = true
+		minimax_m2_model.max_tokens = 64 * 1024
+		minimax_m2_model.active = false
+		minimax_m2_model.supplier_id = minimax_supplier.id
+		minimax_supplier.models.append(minimax_m2_model)
+
+		# 添加默认Gemini供应商
+		var gemini_supplier = SupplierInfo.new()
+		gemini_supplier.name = "Gemini"
+		gemini_supplier.base_url = "https://generativelanguage.googleapis.com/v1beta"
+		gemini_supplier.api_key = ""
+		gemini_supplier.provider = "gemini"
+		suppliers.append(gemini_supplier)
+
+		var gemini_flash_preview = ModelInfo.new()
+		gemini_flash_preview.name = "gemini-3-flash-preview"
+		gemini_flash_preview.model_name = "gemini-3-flash-preview"
+		gemini_flash_preview.supports_thinking = false
+		gemini_flash_preview.supports_tools = false
+		gemini_flash_preview.max_tokens = 64 * 1024
+		gemini_flash_preview.active = false
+		gemini_flash_preview.supplier_id = gemini_supplier.id
+		gemini_supplier.models.append(gemini_flash_preview)
+
+		var gemini_31_pro_preview = ModelInfo.new()
+		gemini_31_pro_preview.name = "gemini-3.1-pro-preview"
+		gemini_31_pro_preview.model_name = "gemini-3.1-pro-preview"
+		gemini_31_pro_preview.supports_thinking = false
+		gemini_31_pro_preview.supports_tools = false
+		gemini_31_pro_preview.max_tokens = 64 * 1024
+		gemini_31_pro_preview.active = false
+		gemini_31_pro_preview.supplier_id = gemini_supplier.id
+		gemini_supplier.models.append(gemini_31_pro_preview)
+
+		var gemini_25_flash = ModelInfo.new()
+		gemini_25_flash.name = "gemini-2.5-flash"
+		gemini_25_flash.model_name = "gemini-2.5-flash"
+		gemini_25_flash.supports_thinking = false
+		gemini_25_flash.supports_tools = false
+		gemini_25_flash.max_tokens = 64 * 1024
+		gemini_25_flash.active = false
+		gemini_25_flash.supplier_id = gemini_supplier.id
+		gemini_supplier.models.append(gemini_25_flash)
+
 		# 添加默认OpenRouter供应商
 		var openrouter_supplier = SupplierInfo.new()
 		openrouter_supplier.name = "Open Router"
@@ -256,14 +362,19 @@ class ModelManager:
 
 		save_datas()
 
+		var model_size = suppliers.reduce(func(sum, supplier): return supplier.models.size() + sum, 0)
+		AlphaAgentPlugin.print_alpha_message("{0}个默认供应商及{1}个模型创建完成".format([suppliers.size(), model_size]))
+
 
 	func load_models():
 		var file_content = FileAccess.get_file_as_string(config_file)
 		if FileAccess.get_open_error() != OK:
+			AlphaAgentPlugin.print_alpha_message("模型配置文件不存在，将创建默认供应商...")
 			return
 
 		var json = JSON.parse_string(file_content)
 		if json == null:
+			AlphaAgentPlugin.print_alpha_message("模型配置文件解析失败，将创建默认供应商...")
 			return
 
 		current_model_id = json.get("current_model_id", "")
@@ -273,6 +384,9 @@ class ModelManager:
 		suppliers.clear()
 		for supplier_data in suppliers_data:
 			suppliers.append(SupplierInfo.from_dict(supplier_data))
+		var model_size = suppliers.reduce(func(sum, supplier): return supplier.models.size() + sum, 0)
+
+		AlphaAgentPlugin.print_alpha_message("{0}个供应商及{1}个模型加载完成".format([suppliers.size(), model_size]))
 
 	func save_datas():
 		var data = {

@@ -2,15 +2,12 @@
 
 [ext_resource type="Script" uid="uid://dry1n6m67ku3q" path="res://addons/agent/ui/setting/setting.gd" id="1_c2l6f"]
 [ext_resource type="PackedScene" uid="uid://c2ei06dd8phsw" path="res://addons/agent/ui/setting/setting_item_bool.tscn" id="1_ca3bj"]
+[ext_resource type="Theme" uid="uid://dwqhs78076qut" path="res://addons/agent/ui/resource/AgentTheme.tres" id="1_k4cyc"]
 [ext_resource type="PackedScene" uid="uid://jbwyo7x0ce47" path="res://addons/agent/ui/setting/setting_item_option.tscn" id="4_83qt4"]
 [ext_resource type="PackedScene" uid="uid://wicqyhlygh1v" path="res://addons/agent/ui/models/supplier_option_window.tscn" id="4_k4cyc"]
-
-[sub_resource type="LabelSettings" id="LabelSettings_83qt4"]
-font_size = 20
+[ext_resource type="PackedScene" uid="uid://bldax4sbp20q2" path="res://addons/agent/ui/setting/setting_item_string.tscn" id="5_3klaf"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_c2l6f"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_83qt4"]
 
 [node name="SettingContainer" type="ScrollContainer"]
 anchors_preset = 15
@@ -19,6 +16,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 size_flags_vertical = 3
+theme = ExtResource("1_k4cyc")
 script = ExtResource("1_c2l6f")
 
 [node name="SettingPanel" type="MarginContainer" parent="."]
@@ -39,8 +37,8 @@ theme_override_constants/margin_bottom = 12
 
 [node name="Label" type="Label" parent="SettingPanel/SettingItemsContainer/MarginContainer"]
 layout_mode = 2
+theme_type_variation = &"TitleLabel"
 text = "对话设置"
-label_settings = SubResource("LabelSettings_83qt4")
 
 [node name="AutoClearSetting" parent="SettingPanel/SettingItemsContainer" instance=ExtResource("1_ca3bj")]
 layout_mode = 2
@@ -75,6 +73,20 @@ popup/item_1/id = 1
 popup/item_2/text = "Ctrl + Enter"
 popup/item_2/id = 2
 
+[node name="HBoxContainer" type="HBoxContainer" parent="SettingPanel/SettingItemsContainer"]
+layout_mode = 2
+
+[node name="HttpProxyHost" parent="SettingPanel/SettingItemsContainer/HBoxContainer" instance=ExtResource("5_3klaf")]
+layout_mode = 2
+size_flags_horizontal = 3
+setting_name = "Http代理主机"
+setting_key = "http_proxy_host"
+
+[node name="HttpProxyPort" parent="SettingPanel/SettingItemsContainer/HBoxContainer" instance=ExtResource("5_3klaf")]
+layout_mode = 2
+setting_name = "端口"
+setting_key = "http_proxy_port"
+
 [node name="HSeparator" type="HSeparator" parent="SettingPanel/SettingItemsContainer"]
 layout_mode = 2
 theme_override_constants/separation = 10
@@ -85,8 +97,8 @@ theme_override_constants/margin_bottom = 12
 
 [node name="Label" type="Label" parent="SettingPanel/SettingItemsContainer/MarginContainer2"]
 layout_mode = 2
+theme_type_variation = &"TitleLabel"
 text = "模型设置"
-label_settings = SubResource("LabelSettings_83qt4")
 
 [node name="ModelSetting" type="VBoxContainer" parent="SettingPanel/SettingItemsContainer"]
 layout_mode = 2
@@ -95,6 +107,8 @@ layout_mode = 2
 unique_name_in_owner = true
 layout_mode = 2
 tooltip_text = "供应商管理"
+mouse_default_cursor_shape = 2
+theme_type_variation = &"PrimaryButton"
 text = "供应商管理"
 
 [node name="SupplierList" type="VBoxContainer" parent="SettingPanel/SettingItemsContainer/ModelSetting"]
@@ -118,8 +132,8 @@ theme_override_constants/margin_bottom = 12
 
 [node name="Label" type="Label" parent="SettingPanel/SettingItemsContainer/MarginContainer3"]
 layout_mode = 2
+theme_type_variation = &"TitleLabel"
 text = "角色管理"
-label_settings = SubResource("LabelSettings_83qt4")
 
 [node name="RoleList" type="VBoxContainer" parent="SettingPanel/SettingItemsContainer"]
 unique_name_in_owner = true
@@ -129,7 +143,8 @@ layout_mode = 2
 unique_name_in_owner = true
 layout_mode = 2
 tooltip_text = "添加新的角色"
-theme_override_styles/focus = SubResource("StyleBoxEmpty_83qt4")
+mouse_default_cursor_shape = 2
+theme_type_variation = &"PrimaryButton"
 text = "添加角色"
 
 [node name="SupplierOptionWindow" parent="." instance=ExtResource("4_k4cyc")]

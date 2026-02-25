@@ -19,12 +19,12 @@ extends MarginContainer
 
 const REFERENCE_ITEM = preload("uid://bewckbivwp036")
 
-signal send_message(message: Dictionary, message_content: String, use_thinking: bool)
+signal send_message(message: Dictionary, message_content: String)
 signal stop_chat
 signal show_help
 signal show_setting
 signal show_memory
-signal model_changed(model_id: String)
+signal model_changed(supplier_id: String, model_id: String)
 
 enum MenuListType {
 	None,
@@ -91,9 +91,12 @@ func update_model_selector(suppliers: Array, current_model_id: String, current_m
 		return
 
 	model_button.clear()
+	model_id_list = {}
+	use_thinking.visible = false
+	use_thinking.button_pressed = false
 
 	var current_idx = 0
-	var supplier_idx = 0
+	var first_model_idx = -1
 	var idx = 0
 
 	for supplier in suppliers:
@@ -106,6 +109,8 @@ func update_model_selector(suppliers: Array, current_model_id: String, current_m
 		# 添加模型
 		for model in models:
 			model_button.add_item(model.name)
+			if first_model_idx == -1:
+				first_model_idx = idx
 			if model.id == current_model_id:
 				current_idx = idx
 				var supports_thinking: bool = model.supports_thinking
@@ -122,12 +127,20 @@ func update_model_selector(suppliers: Array, current_model_id: String, current_m
 		config_model_tip.hide()
 
 		# 设置当前选中的模型
+		if not model_id_list.has(current_idx):
+			current_idx = first_model_idx
 		model_button.selected = current_idx
+		if current_idx != -1:
+			_on_model_selected(current_idx)
 
 # 模型选择回调
 func _on_model_selected(idx: int):
 	var model_manager = AlphaAgentPlugin.global_setting.model_manager
 	if not model_manager:
+		return
+	if not model_id_list.has(idx):
+		use_thinking.visible = false
+		use_thinking.button_pressed = false
 		return
 
 	var model_id = model_id_list[idx]
@@ -138,6 +151,9 @@ func _on_model_selected(idx: int):
 		use_thinking.visible = supports_thinking
 		use_thinking.button_pressed = supports_thinking
 		model_changed.emit(supplier_id, model_id)
+	else:
+		use_thinking.visible = false
+		use_thinking.button_pressed = false
 
 func update_role_selector(roles: Array, current_role_id: String):
 	if not role_button:
@@ -163,9 +179,28 @@ func user_input_can_drop (at_position: Vector2, data: Variant):
 	var allow_types = ['files', "files_and_dirs", 'nodes', 'script_list_element', 'shader_list_element']
 	return allow_types.find(data.type) != -1
 
+func _insert_text_at_current_caret(insert_text: String) -> bool:
+	if insert_text.is_empty():
+		return false
+
+	var start_line := user_input.get_caret_line()
+	var start_column := user_input.get_caret_column()
+	user_input.insert_text_at_caret(insert_text)
+
+	# 拖拽流程中显式设置光标，确保始终落在新增文本末尾
+	var lines := insert_text.split("\n", true)
+	if lines.size() == 1:
+		user_input.set_caret_line(start_line)
+		user_input.set_caret_column(start_column + lines[0].length())
+	else:
+		user_input.set_caret_line(start_line + lines.size() - 1)
+		user_input.set_caret_column(lines[-1].length())
+	return true
+
 ## 将数据拖放到输入框后处理数据
 func user_input_drop_data(at_position: Vector2, data: Variant):
 	var info_list = reference_list.get_children().map(func(node): return node.info)
+	var has_inserted_text := false
 	match data.type:
 		"files":
 			var file_info_list = info_list.filter(func(info): return info.type == "file")
@@ -181,7 +216,7 @@ func user_input_drop_data(at_position: Vector2, data: Variant):
 				reference_item.set_label(file.get_file())
 				reference_item.set_tooltip(file)
 				if AlphaAgentPlugin.global_setting.auto_add_file_ref:
-					user_input.insert_text_at_caret(file.get_file() + " ")
+					has_inserted_text = _insert_text_at_current_caret(file.get_file() + " ") or has_inserted_text
 		"files_and_dirs":
 			var file_info_list = info_list.filter(func(info): return info.type == "file")
 			for file: String in data.files:
@@ -196,7 +231,7 @@ func user_input_drop_data(at_position: Vector2, data: Variant):
 				reference_item.set_label(file if file.ends_with("/") else file.get_file())
 				reference_item.set_tooltip(file)
 				if AlphaAgentPlugin.global_setting.auto_add_file_ref:
-					user_input.insert_text_at_caret(file if file.ends_with("/") else file.get_file() + " ")
+					has_inserted_text = _insert_text_at_current_caret(file if file.ends_with("/") else file.get_file() + " ") or has_inserted_text
 		"nodes":
 			var node_info_list = info_list.filter(func(info): return info.type == "node")
 			var root_node = EditorInterface.get_edited_scene_root()
@@ -209,6 +244,7 @@ func user_input_drop_data(at_position: Vector2, data: Variant):
 				var path = splite_array[-1]
 
 				if node_info_list.find_custom(func(info): return info.path == path and info.scene == current_scene) != -1:
+					user_input.grab_focus()
 					return
 				var reference_item = REFERENCE_ITEM.instantiate()
 				reference_item.info = {
@@ -221,7 +257,7 @@ func user_input_drop_data(at_position: Vector2, data: Variant):
 
 				reference_item.set_tooltip(current_scene + "/" + path)
 				if AlphaAgentPlugin.global_setting.auto_add_file_ref:
-					user_input.insert_text_at_caret(current_scene.get_file() + "/" + path.split('/')[-1] + " ")
+					has_inserted_text = _insert_text_at_current_caret(current_scene.get_file() + "/" + path.split('/')[-1] + " ") or has_inserted_text
 			pass
 		"script_list_element":
 			var script = EditorInterface.get_script_editor().get_current_script()
@@ -233,12 +269,14 @@ func user_input_drop_data(at_position: Vector2, data: Variant):
 				var editor_file_list: ItemList = script_editor.get_child(0).get_child(1).get_child(0).get_child(0).get_child(1)
 				var selected := editor_file_list.get_selected_items()
 				if not selected:
+					user_input.grab_focus()
 					return
 				var index := selected[0]
 				file = editor_file_list.get_item_tooltip(index)
 			var file_info_list = info_list.filter(func(info): return info.type == "file")
 
 			if file_info_list.find_custom(func(info): return info.path == file) != -1:
+				user_input.grab_focus()
 				return
 			var reference_item = REFERENCE_ITEM.instantiate()
 			reference_item.info = {
@@ -250,10 +288,12 @@ func user_input_drop_data(at_position: Vector2, data: Variant):
 			reference_item.set_tooltip(file)
 
 			if AlphaAgentPlugin.global_setting.auto_add_file_ref:
-				user_input.insert_text_at_caret(file.get_file() + " ")
+				has_inserted_text = _insert_text_at_current_caret(file.get_file() + " ") or has_inserted_text
 		"shader_list_element":
 			print("暂时不支持拖拽shader，请从文件系统中拖入。")
 			pass
+
+	user_input.grab_focus()
 
 # 完全初始化输入框
 func init():
@@ -278,7 +318,9 @@ func on_click_clear_button():
 
 ## 发送信息
 func on_click_send_message():
-	var message_text = user_input.text
+	var message_text = user_input.text.strip_edges(true, true)
+	if message_text.is_empty():
+		return
 
 	# 检查是否为命令
 	if message_text.begins_with("/"):
@@ -387,8 +429,9 @@ func _on_user_input_gui_input(event: InputEvent) -> void:
 		return
 	var send_shortcut = AlphaAgentPlugin.global_setting.send_shortcut
 	if event is InputEventKey:
+		var is_enter_key = event.keycode == KEY_ENTER or event.keycode == KEY_KP_ENTER
 		# 普通enter键
-		if event.keycode == KEY_ENTER and \
+		if is_enter_key and \
 			not event.alt_pressed and \
 			not event.shift_pressed and \
 			not event.ctrl_pressed and \
@@ -399,15 +442,17 @@ func _on_user_input_gui_input(event: InputEvent) -> void:
 				return
 			elif send_shortcut == AlphaAgentPlugin.SendShotcut.Enter:
 				on_click_send_message()
+				accept_event()
 
 			elif send_shortcut == AlphaAgentPlugin.SendShotcut.CtrlEnter:
 				user_input.insert_text_at_caret("\n")
+				accept_event()
 
 		# ctrl+enter键 发送消息
 		if event.is_command_or_control_pressed() and \
 			not event.alt_pressed and \
 			not event.shift_pressed and \
-			event.keycode == KEY_ENTER and \
+			is_enter_key and \
 			event.pressed:
 
 			if send_shortcut == AlphaAgentPlugin.SendShotcut.None:
@@ -416,6 +461,7 @@ func _on_user_input_gui_input(event: InputEvent) -> void:
 				return
 			elif send_shortcut == AlphaAgentPlugin.SendShotcut.CtrlEnter:
 				on_click_send_message()
+				accept_event()
 
 func switch_button_to(button_name: String):
 	if button_name == "Send":
